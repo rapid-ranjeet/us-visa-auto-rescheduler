@@ -1,0 +1,4 @@
+_metadata/
+*.crx
+*.zip
+node_modules/
