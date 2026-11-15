@@ -41,8 +41,8 @@ async function checkStatusActivate() {
         }
         if (cfPage) { await handleCloudflarePage(cfPage); return; }
         let {
-            __act: e
-        } = await chrome.storage.local.get("__act");
+            fp_act: e
+        } = await chrome.storage.local.get("fp_act");
         (isSchedulerActive = e || !1) ? initializeSchedulingPage(): toast("FalconPath Visa Assistant is disabled")
     } catch (t) {
         isSchedulerActive = !1
@@ -99,12 +99,12 @@ function stripVacSuffix(name) {
 // real OFC naming); Consular locations aren't, so that suffix is stripped
 // when borrowing an OFC name for the Consular list.
 async function seedProvisionalSiblingList(sourceKind, sourceRealMap) {
-    const siblingKey = sourceKind === "ofc" ? "__consularCities" : "__ofcCities";
+    const siblingKey = sourceKind === "ofc" ? "fp_consularCities" : "fp_ofcCities";
     let existing = await chrome.storage.local.get([siblingKey]);
     if (existing[siblingKey] && Object.keys(existing[siblingKey]).length) return;
     let provisional = {};
     Object.entries(sourceRealMap).forEach(([id, name]) => {
-        provisional[PENDING_PREFIX + id] = siblingKey === "__consularCities" ? stripVacSuffix(name) : name;
+        provisional[PENDING_PREFIX + id] = siblingKey === "fp_consularCities" ? stripVacSuffix(name) : name;
     });
     if (Object.keys(provisional).length) {
         await chrome.storage.local.set({
@@ -117,8 +117,8 @@ async function seedProvisionalSiblingList(sourceKind, sourceRealMap) {
 // stored from before this fix — strips any leftover "VAC" text so the
 // Consular section only ever shows plain city names.
 async function cleanupConsularVacLabels() {
-    let stored = await chrome.storage.local.get(["__consularCities"]);
-    let cities = stored.__consularCities;
+    let stored = await chrome.storage.local.get(["fp_consularCities"]);
+    let cities = stored.fp_consularCities;
     if (!cities || !Object.keys(cities).length) return;
     let changed = !1, cleaned = {};
     Object.entries(cities).forEach(([id, name]) => {
@@ -127,7 +127,7 @@ async function cleanupConsularVacLabels() {
         cleaned[id] = stripped || name;
     });
     if (changed) await chrome.storage.local.set({
-        __consularCities: cleaned
+        fp_consularCities: cleaned
     });
 }
 
@@ -137,7 +137,7 @@ async function cleanupConsularVacLabels() {
 // matching names, and anything that can't be matched is dropped with a toast
 // rather than silently left pointing at a made-up ID.
 async function reconcilePendingSelections(kind, oldMap, newRealMap) {
-    const selectedKey = kind === "ofc" ? "__ofcSelectedCities" : "__consularSelectedCities";
+    const selectedKey = kind === "ofc" ? "fp_ofcSelectedCities" : "fp_consularSelectedCities";
     let stored = await chrome.storage.local.get([selectedKey]);
     let selected = Array.isArray(stored[selectedKey]) ? stored[selectedKey] : [];
     if (!selected.some(isPendingCityId)) return;
@@ -166,17 +166,17 @@ async function reconcilePendingSelections(kind, oldMap, newRealMap) {
 }
 
 async function migrateLegacyCitySelection() {
-    let existing = await chrome.storage.local.get(["__ofcSelectedCities", "__consularSelectedCities", "__cty", "__ofcCities", "__consularCities"]);
-    if (!Array.isArray(existing.__ofcSelectedCities)) {
-        let seed = (existing.__cty && existing.__ofcCities && existing.__ofcCities[existing.__cty]) ? [existing.__cty] : [];
+    let existing = await chrome.storage.local.get(["fp_ofcSelectedCities", "fp_consularSelectedCities", "fp_cty", "fp_ofcCities", "fp_consularCities"]);
+    if (!Array.isArray(existing.fp_ofcSelectedCities)) {
+        let seed = (existing.fp_cty && existing.fp_ofcCities && existing.fp_ofcCities[existing.fp_cty]) ? [existing.fp_cty] : [];
         await chrome.storage.local.set({
-            __ofcSelectedCities: seed
+            fp_ofcSelectedCities: seed
         });
     }
-    if (!Array.isArray(existing.__consularSelectedCities)) {
-        let seed = (existing.__cty && existing.__consularCities && existing.__consularCities[existing.__cty]) ? [existing.__cty] : [];
+    if (!Array.isArray(existing.fp_consularSelectedCities)) {
+        let seed = (existing.fp_cty && existing.fp_consularCities && existing.fp_consularCities[existing.fp_cty]) ? [existing.fp_cty] : [];
         await chrome.storage.local.set({
-            __consularSelectedCities: seed
+            fp_consularSelectedCities: seed
         });
     }
 }
@@ -185,9 +185,9 @@ async function migrateLegacyCitySelection() {
 // all in one place, submitted once via "Start Checking". Non-dismissible —
 // it's a required one-time setup step, not an optional prompt.
 async function showLocationSetupModal() {
-    let stored = await chrome.storage.local.get(["__ofcCities", "__consularCities", "__st", "__en"]),
-        ofcCities = stored.__ofcCities || {},
-        consularCities = stored.__consularCities || {},
+    let stored = await chrome.storage.local.get(["fp_ofcCities", "fp_consularCities", "fp_st", "fp_en"]),
+        ofcCities = stored.fp_ofcCities || {},
+        consularCities = stored.fp_consularCities || {},
         ofcIds = Object.keys(ofcCities),
         consularIds = Object.keys(consularCities);
 
@@ -210,11 +210,11 @@ async function showLocationSetupModal() {
             <div style="display:flex;gap:10px;">
                 <div style="flex:1;">
                     <label style="display:block;font-size:11px;color:#64748b;margin-bottom:4px;">EARLIEST DATE</label>
-                    <input type="date" id="setup_start_date" value="${escapeHtml(stored.__st || "")}" style="width:100%;padding:8px;background:rgba(15,15,35,0.7);border:1px solid rgba(139,92,246,0.2);border-radius:8px;color:#f1f5f9;box-sizing:border-box;">
+                    <input type="date" id="setup_start_date" value="${escapeHtml(stored.fp_st || "")}" style="width:100%;padding:8px;background:rgba(15,15,35,0.7);border:1px solid rgba(139,92,246,0.2);border-radius:8px;color:#f1f5f9;box-sizing:border-box;">
                 </div>
                 <div style="flex:1;">
                     <label style="display:block;font-size:11px;color:#64748b;margin-bottom:4px;">LATEST DATE</label>
-                    <input type="date" id="setup_end_date" value="${escapeHtml(stored.__en || "")}" style="width:100%;padding:8px;background:rgba(15,15,35,0.7);border:1px solid rgba(139,92,246,0.2);border-radius:8px;color:#f1f5f9;box-sizing:border-box;">
+                    <input type="date" id="setup_end_date" value="${escapeHtml(stored.fp_en || "")}" style="width:100%;padding:8px;background:rgba(15,15,35,0.7);border:1px solid rgba(139,92,246,0.2);border-radius:8px;color:#f1f5f9;box-sizing:border-box;">
                 </div>
             </div>
         </div>`;
@@ -247,10 +247,10 @@ async function showLocationSetupModal() {
 
     if (result.isConfirmed && result.value) {
         await chrome.storage.local.set({
-            __ofcSelectedCities: result.value.ofcSelected,
-            __consularSelectedCities: result.value.consularSelected,
-            __st: result.value.start,
-            __en: result.value.end
+            fp_ofcSelectedCities: result.value.ofcSelected,
+            fp_consularSelectedCities: result.value.consularSelected,
+            fp_st: result.value.start,
+            fp_en: result.value.end
         });
         toast("Locations and dates saved. Starting checks...");
     }
@@ -264,7 +264,7 @@ async function showLocationSetupModal() {
 // until the person submits it. Never returns false / bails the caller;
 // scanning always proceeds right after this resolves, no page refresh ever.
 async function ensureConfiguredBeforeScanning(kind) {
-    const citiesKey = kind === "ofc" ? "__ofcCities" : "__consularCities";
+    const citiesKey = kind === "ofc" ? "fp_ofcCities" : "fp_consularCities";
 
     await cleanupConsularVacLabels();
 
@@ -290,10 +290,10 @@ async function ensureConfiguredBeforeScanning(kind) {
 
     await migrateLegacyCitySelection();
 
-    let cfg = await chrome.storage.local.get(["__ofcSelectedCities", "__consularSelectedCities", "__st", "__en"]),
-        hasCity = (Array.isArray(cfg.__ofcSelectedCities) && cfg.__ofcSelectedCities.length) ||
-        (Array.isArray(cfg.__consularSelectedCities) && cfg.__consularSelectedCities.length);
-    if (hasCity && cfg.__st && cfg.__en) return;
+    let cfg = await chrome.storage.local.get(["fp_ofcSelectedCities", "fp_consularSelectedCities", "fp_st", "fp_en"]),
+        hasCity = (Array.isArray(cfg.fp_ofcSelectedCities) && cfg.fp_ofcSelectedCities.length) ||
+        (Array.isArray(cfg.fp_consularSelectedCities) && cfg.fp_consularSelectedCities.length);
+    if (hasCity && cfg.fp_st && cfg.fp_en) return;
 
     await showLocationSetupModal();
 }
@@ -344,9 +344,9 @@ async function initializeSchedulingPage() {
                 }), n) {
                 let i = new Date(n);
                 await chrome.storage.local.set({
-                    __ad: i.toISOString().split("T")[0]
+                    fp_ad: i.toISOString().split("T")[0]
                 }), await chrome.storage.local.set({
-                    __en: i.toISOString().split("T")[0]
+                    fp_en: i.toISOString().split("T")[0]
                 }), await chrome.storage.local.set({
                     dateSelectionInProgress: !1
                 }), toast("FalconPath Visa Assistant - Appointment confirmed successfully")
@@ -366,19 +366,19 @@ async function initializeSchedulingPage() {
                 (l = new Date).setFullYear(d.getFullYear() + 3)
             }
             await chrome.storage.local.set({
-                __ad: l.getFullYear() + "-" + (l.getMonth() + 1 + "").padStart(2, 0) + "-" + (l.getDate() + "").padStart(2, 0)
+                fp_ad: l.getFullYear() + "-" + (l.getMonth() + 1 + "").padStart(2, 0) + "-" + (l.getDate() + "").padStart(2, 0)
             });
-            let u = await chrome.storage.local.get(["__st"]).then(({
-                    __st: e
+            let u = await chrome.storage.local.get(["fp_st"]).then(({
+                    fp_st: e
                 }) => e),
-                p = await chrome.storage.local.get(["__en"]).then(({
-                    __en: e
+                p = await chrome.storage.local.get(["fp_en"]).then(({
+                    fp_en: e
                 }) => e);
             u || p || await chrome.storage.local.set({
-                __st: new Date().toISOString().split("T")[0],
-                __en: l.getFullYear() + "-" + (l.getMonth() + 1 + "").padStart(2, 0) + "-" + (l.getDate() + "").padStart(2, 0)
+                fp_st: new Date().toISOString().split("T")[0],
+                fp_en: l.getFullYear() + "-" + (l.getMonth() + 1 + "").padStart(2, 0) + "-" + (l.getDate() + "").padStart(2, 0)
             }), p && new Date(p) > l && await chrome.storage.local.set({
-                __en: l.getFullYear() + "-" + (l.getMonth() + 1 + "").padStart(2, 0) + "-" + (l.getDate() + "").padStart(2, 0)
+                fp_en: l.getFullYear() + "-" + (l.getMonth() + 1 + "").padStart(2, 0) + "-" + (l.getDate() + "").padStart(2, 0)
             });
             // ── Smart home-page navigation ──────────────────────────────────────
             // Uses link.href (DOM property = fully-resolved absolute URL) instead
@@ -494,7 +494,7 @@ async function checkDates(e, t) {
             return
         }
         await chrome.storage.local.set({
-            __appid: e.primaryId
+            fp_appid: e.primaryId
         });
         try {
             await fetchFamilyMembers(e.primaryId, e.contactId, t)
@@ -522,8 +522,8 @@ async function checkDates(e, t) {
 // yet, it polls every couple of seconds and resumes the moment a location is
 // picked, rather than exiting and requiring a refresh to restart.
 async function runCityScanLoop(baseData, cookieMonitor, isOFC) {
-    const citiesKey = isOFC ? "__ofcCities" : "__consularCities",
-        selectedKey = isOFC ? "__ofcSelectedCities" : "__consularSelectedCities",
+    const citiesKey = isOFC ? "fp_ofcCities" : "fp_consularCities",
+        selectedKey = isOFC ? "fp_ofcSelectedCities" : "fp_consularSelectedCities",
         typeLabel = isOFC ? "OFC" : "Consular";
     let notifiedEmpty = !1, cityIndex = 0, consecutiveFailures = 0;
     startSyncInterval();
@@ -622,15 +622,15 @@ async function runCityScanLoop(baseData, cookieMonitor, isOFC) {
 // true if a matching date was found (and the booking flow was started),
 // false if no match this round.
 async function checkConsularCityDates(e, t) {
-    let r = await chrome.storage.local.get(["__ad"]).then(({
-        __ad: e
+    let r = await chrome.storage.local.get(["fp_ad"]).then(({
+        fp_ad: e
     }) => e);
     try {
-        let o = await chrome.storage.local.get(["__st"]).then(({
-                __st: e
+        let o = await chrome.storage.local.get(["fp_st"]).then(({
+                fp_st: e
             }) => e),
-            n = await chrome.storage.local.get(["__en"]).then(({
-                __en: e
+            n = await chrome.storage.local.get(["fp_en"]).then(({
+                fp_en: e
             }) => e);
         if (!o || !n) {
             toast("Date range not set for date check. Please configure dates in the extension popup."), chrome.runtime.sendMessage({
@@ -776,15 +776,15 @@ async function checkConsularCityDates(e, t) {
 // Single-shot OFC (biometrics) date check for one city. Returns true if a
 // matching date was found (and the booking flow was started), false if not.
 async function checkOFCCityDates(e, t) {
-    let r = await chrome.storage.local.get(["__ad"]).then(({
-        __ad: e
+    let r = await chrome.storage.local.get(["fp_ad"]).then(({
+        fp_ad: e
     }) => e);
     try {
-        let o = await chrome.storage.local.get(["__st"]).then(({
-                __st: e
+        let o = await chrome.storage.local.get(["fp_st"]).then(({
+                fp_st: e
             }) => e),
-            n = await chrome.storage.local.get(["__en"]).then(({
-                __en: e
+            n = await chrome.storage.local.get(["fp_en"]).then(({
+                fp_en: e
             }) => e);
         if (!o || !n) {
             toast("Date range not set for date check. Please configure dates in the extension popup."), chrome.runtime.sendMessage({
@@ -999,8 +999,8 @@ async function extractPageData() {
         }
         let y = document.querySelectorAll('[data-appd], [data-primary-id], [data-post-id], input[type="hidden"]');
         y.forEach(e => {});
-        r && (r = r.trim().replace(/["']/g, "")), o && (o = o.trim().replace(/["']/g, "")), n && (n = n.trim().replace(/["']/g, "")), n || (n = await chrome.storage.local.get(["__cty"]).then(({
-            __cty: e
+        r && (r = r.trim().replace(/["']/g, "")), o && (o = o.trim().replace(/["']/g, "")), n && (n = n.trim().replace(/["']/g, "")), n || (n = await chrome.storage.local.get(["fp_cty"]).then(({
+            fp_cty: e
         }) => e));
         let m = {
             contactId: r,
@@ -1366,8 +1366,8 @@ async function handlePSE0501() {
     await new Promise(r => setTimeout(r, pauseMins * 60 * 1000));
     pse0501PauseActive = false;
 
-    const { __act } = await chrome.storage.local.get('__act');
-    if (__act) {
+    const { fp_act } = await chrome.storage.local.get('fp_act');
+    if (fp_act) {
         isSchedulerActive    = true;
         schedulingPageHandled = false;
         startSyncInterval();
@@ -1498,8 +1498,8 @@ async function handleExceededLimit() {
         toast('Rate limit cleared on this account — resuming scan...', '#22c55e');
         console.log('[FalconPath] Exceeded-limit resolved — resuming');
 
-        const { __act } = await chrome.storage.local.get('__act');
-        if (__act) {
+        const { fp_act } = await chrome.storage.local.get('fp_act');
+        if (fp_act) {
             isSchedulerActive    = true;
             schedulingPageHandled = false;
             startSyncInterval();
@@ -1605,8 +1605,8 @@ function startCFPageWatcher() {
         removeCaptchaOverlay();
         toast('Access granted — resuming date scan...', '#22c55e');
         await new Promise(r => setTimeout(r, 1500));
-        const { __act } = await chrome.storage.local.get('__act');
-        if (__act) {
+        const { fp_act } = await chrome.storage.local.get('fp_act');
+        if (fp_act) {
             isSchedulerActive = true;
             schedulingPageHandled = false;
             startSyncInterval();
@@ -1846,9 +1846,9 @@ async function fetchTimeSlots(e, t, a) {
 async function getCheckFrequencyMs() {
     try {
         let e = await new Promise(e => {
-            chrome.storage.local.get(["__fq", "__fqType"], t => {
-                let a = t.__fq || 30,
-                    r = t.__fqType || "seconds",
+            chrome.storage.local.get(["fp_fq", "fp_fqType"], t => {
+                let a = t.fp_fq || 30,
+                    r = t.fp_fqType || "seconds",
                     o = 3e4;
                 a && ("seconds" === r ? o = 1e3 * a : "minutes" === r ? o = 6e4 * a : "hours" === r && (o = 36e5 * a));
                 let n = .2 * o;
@@ -1917,9 +1917,9 @@ async function selectTimes() {
             bookedTimeSlot: time
         });
         const {
-            __ab
-        } = await chrome.storage.local.get("__ab");
-        if (__ab) {
+            fp_ab
+        } = await chrome.storage.local.get("fp_ab");
+        if (fp_ab) {
             await toast(`AutoBook! Time: ${time} | Slots: ${avail}`);
             const btn = document.getElementById("submitbtn");
             if (btn) {
@@ -2068,7 +2068,7 @@ schedulerPort.postMessage({
     action: "fetch_info"
 });
 chrome.runtime.onMessage.addListener((e, t, a) => {
-    "notificate" === e.action ? (toast("Changes saved successfully."), e.value && ("frequencyValue" == e.value || "frequencyType" == e.value || "activate" == e.value || "autobook" == e.value) && location.reload()) : "wake" === e.action && (toast("Keep Awake saved successfully." + e.value), !0 === e.value ? chrome.runtime.connect({
+    "notificate" === e.action ? (toast("Changes saved successfully."), e.value && ("fpFrequencyValue" == e.value || "frequencyType" == e.value || "activate" == e.value || "autobook" == e.value) && location.reload()) : "wake" === e.action && (toast("Keep Awake saved successfully." + e.value), !0 === e.value ? chrome.runtime.connect({
         name: "scheduler"
     }).postMessage({
         action: "requestKeepAwake"

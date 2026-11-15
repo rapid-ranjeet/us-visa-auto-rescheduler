@@ -22,23 +22,23 @@
                 </svg>
                 <span>FalconPath</span>
             </span>
-            <span class="fp-version" id="version"></span>
+            <span class="fp-version" id="fpVersion"></span>
         </div>
 
-        <div class="fp-hero-status" id="heroStatus">
+        <div class="fp-hero-status" id="fpHeroStatus">
             <span class="fp-pulse" aria-hidden="true"></span>
-            <span class="fp-hero-text" id="heroText">Idle</span>
+            <span class="fp-hero-text" id="fpHeroText">Idle</span>
         </div>
 
-        <div class="fp-hero-meta" id="heroMeta">
-            <span class="fp-user" id="currentUser">Not signed in</span>
+        <div class="fp-hero-meta" id="fpHeroMeta">
+            <span class="fp-user" id="fpCurrentUser">Not signed in</span>
         </div>
     </header>
 
     <!-- ─── Big Start / Stop ─────────────────────────────────────── -->
     <div class="fp-power">
-        <input type="checkbox" id="enable" hidden>
-        <label for="enable" class="fp-power-btn" id="powerLabel">Start scanning</label>
+        <input type="checkbox" id="fpEnable" hidden>
+        <label for="enable" class="fp-power-btn" id="fpPowerLabel">Start scanning</label>
     </div>
 
     <!-- ─── Behaviour (2 toggles) ────────────────────────────────── -->
@@ -49,7 +49,7 @@
                 <div class="fp-toggle-sub">Confirm the moment a slot matches</div>
             </div>
             <label class="fp-switch">
-                <input type="checkbox" id="autobook" checked>
+                <input type="checkbox" id="fpAutobook" checked>
                 <span class="fp-switch-track"></span>
             </label>
         </div>
@@ -59,7 +59,7 @@
                 <div class="fp-toggle-sub">Stop the laptop sleeping mid-scan</div>
             </div>
             <label class="fp-switch">
-                <input type="checkbox" id="wake">
+                <input type="checkbox" id="fpWake">
                 <span class="fp-switch-track"></span>
             </label>
         </div>
@@ -71,23 +71,23 @@
         <div class="fp-dates">
             <div class="fp-field">
                 <label for="start">Earliest</label>
-                <input type="date" id="start">
+                <input type="date" id="fpStart">
             </div>
             <span class="fp-dates-arrow" aria-hidden="true">→</span>
             <div class="fp-field">
                 <label for="end">Latest</label>
-                <input type="date" id="end">
+                <input type="date" id="fpEnd">
             </div>
         </div>
-        <div class="fp-dates-hint" id="datesHint">Set both dates to begin.</div>
+        <div class="fp-dates-hint" id="fpDatesHint">Set both dates to begin.</div>
     </section>
 
     <!-- ─── Scan frequency ───────────────────────────────────────── -->
     <section class="fp-section">
         <div class="fp-section-title">Scan every</div>
         <div class="fp-frequency">
-            <input type="number" id="frequencyValue" min="1" max="3600" value="30">
-            <select id="frequencyType">
+            <input type="number" id="fpFrequencyValue" min="1" max="3600" value="30">
+            <select id="fpFrequencyType">
                 <option selected value="seconds">seconds</option>
                 <option value="minutes">minutes</option>
                 <option value="hours">hours</option>
@@ -99,7 +99,7 @@
     <section class="fp-section">
         <div class="fp-section-title-row">
             <span class="fp-section-title">Locations</span>
-            <span class="fp-section-action" id="locationsSummary">None selected</span>
+            <span class="fp-section-action" id="fpLocationsSummary">None selected</span>
         </div>
 
         <div class="fp-loc-group" data-group="ofc">
@@ -107,8 +107,8 @@
                 <span class="fp-loc-title">OFC · Biometrics</span>
                 <span class="fp-loc-caret" aria-hidden="true">▾</span>
             </div>
-            <div class="fp-loc-panel" id="ofcPanel">
-                <div class="fp-city-list" id="ofcCityList"></div>
+            <div class="fp-loc-panel" id="fpOfcPanel">
+                <div class="fp-city-list" id="fpOfcCityList"></div>
             </div>
         </div>
 
@@ -117,8 +117,8 @@
                 <span class="fp-loc-title">Consular · Interview</span>
                 <span class="fp-loc-caret" aria-hidden="true">▾</span>
             </div>
-            <div class="fp-loc-panel" id="consularPanel">
-                <div class="fp-city-list" id="consularCityList"></div>
+            <div class="fp-loc-panel" id="fpConsularPanel">
+                <div class="fp-city-list" id="fpConsularCityList"></div>
             </div>
         </div>
 
@@ -127,7 +127,7 @@
 
     <!-- ─── Reset ────────────────────────────────────────────────── -->
     <section class="fp-section fp-section-quiet">
-        <button id="reset" type="button" class="fp-reset">Reset everything</button>
+        <button id="fpReset" type="button" class="fp-reset">Reset everything</button>
     </section>
 
     <!-- ─── Footer ───────────────────────────────────────────────── -->

@@ -11,8 +11,8 @@ chrome.runtime.onConnect.addListener(port => {
     port.onMessage.addListener(async def => {
         const response = { action: def.action };
         if (def.action === "fetch_info") {
-            const { __act } = await chrome.storage.local.get("__act");
-            response.data = { $active: __act || false };
+            const { fp_act } = await chrome.storage.local.get("fp_act");
+            response.data = { $active: fp_act || false };
         } else if (def.action === "requestKeepAwake") {
             chrome.power.requestKeepAwake("display");
         } else if (def.action === "releaseKeepAwake") {
@@ -25,9 +25,9 @@ chrome.runtime.onConnect.addListener(port => {
 chrome.runtime.onInstalled.addListener(async ({ reason }) => {
     if (reason === 'install') {
         await chrome.storage.local.set({
-            __act: true, __ab: true, __cr: 1000, __fqType: "seconds", __fq: 30,
-            __cty: null, __ctyLabel: null,
-            __ofcSelectedCities: [], __consularSelectedCities: []
+            fp_act: true, fp_ab: true, fp_cr: 1000, fp_fqType: "seconds", fp_fq: 30,
+            fp_cty: null, fp_ctyLabel: null,
+            fp_ofcSelectedCities: [], fp_consularSelectedCities: []
         });
         chrome.tabs.create({ url: "https://www.usvisascheduling.com" });
     }
@@ -244,7 +244,7 @@ async function cdpHumanClick(tabId, targetX, targetY) {
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
     if (request.action === "activate") {
-        chrome.storage.local.set({ __act: request.status }).then(() => {
+        chrome.storage.local.set({ fp_act: request.status }).then(() => {
             chrome.tabs.query({}, tabs => tabs.forEach(tab =>
                 chrome.tabs.sendMessage(tab.id, { action: "activate", status: request.status }).catch(() => {})
             ));

@@ -180,7 +180,7 @@ body {
     padding: 14px 18px 4px;
 }
 
-#enable {
+#fpEnable {
     display: none;
 }
 
@@ -212,7 +212,7 @@ body {
     transform: translateY(0);
 }
 
-body.fp-running #enable:checked~.fp-power-btn {
+body.fp-running #fpEnable:checked~.fp-power-btn {
     background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
     color: var(--danger);
     border-color: rgba(244, 63, 94, 0.35);

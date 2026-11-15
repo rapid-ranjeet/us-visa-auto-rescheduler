@@ -1,7 +1,7 @@
 document.addEventListener("DOMContentLoaded", async () => {
     const $ = (id) => document.getElementById(id);
 
-    $("version").textContent = "v" + chrome.runtime.getManifest().version;
+    $("fpVersion").textContent = "v" + chrome.runtime.getManifest().version;
 
     /* ── Location lists ────────────────────────────────────────── */
     function renderCityList(containerId, allCities, selected) {
@@ -41,33 +41,33 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     async function updateLocationsSummary() {
-        const s = await chrome.storage.local.get(["__ofcSelectedCities", "__consularSelectedCities"]);
-        const ofc = (s.__ofcSelectedCities || []).length;
-        const con = (s.__consularSelectedCities || []).length;
+        const s = await chrome.storage.local.get(["fp_ofcSelectedCities", "fp_consularSelectedCities"]);
+        const ofc = (s.fp_ofcSelectedCities || []).length;
+        const con = (s.fp_consularSelectedCities || []).length;
         const parts = [];
         if (ofc) parts.push(ofc + " OFC");
         if (con) parts.push(con + " Consular");
-        $("locationsSummary").textContent = parts.length ? parts.join(" · ") : "None selected";
+        $("fpLocationsSummary").textContent = parts.length ? parts.join(" · ") : "None selected";
     }
 
     async function loadCityLists() {
-        const s = await chrome.storage.local.get(["__consularCities", "__consularSelectedCities", "__ofcCities", "__ofcSelectedCities"]);
-        renderCityList("ofcCityList", s.__ofcCities, s.__ofcSelectedCities);
-        renderCityList("consularCityList", s.__consularCities, s.__consularSelectedCities);
+        const s = await chrome.storage.local.get(["fp_consularCities", "fp_consularSelectedCities", "fp_ofcCities", "fp_ofcSelectedCities"]);
+        renderCityList("fpOfcCityList", s.fp_ofcCities, s.fp_ofcSelectedCities);
+        renderCityList("fpConsularCityList", s.fp_consularCities, s.fp_consularSelectedCities);
         await updateLocationsSummary();
     }
 
     await loadCityLists();
 
-    $("consularCityList").addEventListener("change", async e => {
+    $("fpConsularCityList").addEventListener("change", async e => {
         if (e.target?.matches('input[type="checkbox"]')) {
-            await toggleCitySelection("__consularSelectedCities", e.target.dataset.cityId, e.target.checked);
+            await toggleCitySelection("fp_consularSelectedCities", e.target.dataset.cityId, e.target.checked);
             await updateLocationsSummary();
         }
     });
-    $("ofcCityList").addEventListener("change", async e => {
+    $("fpOfcCityList").addEventListener("change", async e => {
         if (e.target?.matches('input[type="checkbox"]')) {
-            await toggleCitySelection("__ofcSelectedCities", e.target.dataset.cityId, e.target.checked);
+            await toggleCitySelection("fp_ofcSelectedCities", e.target.dataset.cityId, e.target.checked);
             await updateLocationsSummary();
         }
     });
@@ -83,17 +83,17 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     /* ── Hero status + power button ────────────────────────────── */
     function renderRunState(active) {
-        const hero = $("heroStatus");
+        const hero = $("fpHeroStatus");
         hero.classList.toggle("active", !!active);
-        $("heroText").textContent = active ? "Scanning" : "Idle";
+        $("fpHeroText").textContent = active ? "Scanning" : "Idle";
         document.body.classList.toggle("fp-running", !!active);
-        $("powerLabel").textContent = active ? "Stop scanning" : "Start scanning";
+        $("fpPowerLabel").textContent = active ? "Stop scanning" : "Start scanning";
     }
 
     /* ── Date-range hint ───────────────────────────────────────── */
     function renderDatesHint() {
-        const s = $("start").value, e = $("end").value;
-        const el = $("datesHint");
+        const s = $("fpStart").value, e = $("fpEnd").value;
+        const el = $("fpDatesHint");
         if (!s || !e) {
             el.textContent = "Set both dates to begin.";
             el.classList.remove("ok");
@@ -106,79 +106,79 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     /* ── Initial load ──────────────────────────────────────────── */
     const s0 = await chrome.storage.local.get();
-    $("currentUser").textContent = s0.__usr || "Not signed in";
-    $("enable").checked = !!s0.__act;
-    $("autobook").checked = !!s0.__ab;
-    $("wake").checked = !!s0.__wake;
-    $("start").value = s0.__st || new Date().toISOString().split("T")[0];
-    $("end").value = s0.__en || "";
-    $("frequencyValue").value = s0.__fq || 30;
-    const fqType = s0.__fqType || "seconds";
-    for (const opt of $("frequencyType").options) {
+    $("fpCurrentUser").textContent = s0.fp_usr || "Not signed in";
+    $("fpEnable").checked = !!s0.fp_act;
+    $("fpAutobook").checked = !!s0.fp_ab;
+    $("fpWake").checked = !!s0.fp_wake;
+    $("fpStart").value = s0.fp_st || new Date().toISOString().split("T")[0];
+    $("fpEnd").value = s0.fp_en || "";
+    $("fpFrequencyValue").value = s0.fp_fq || 30;
+    const fqType = s0.fp_fqType || "seconds";
+    for (const opt of $("fpFrequencyType").options) {
         if (opt.value === fqType) { opt.selected = true; break; }
     }
-    renderRunState(!!s0.__act);
+    renderRunState(!!s0.fp_act);
     renderDatesHint();
 
     /* ── Wire controls ─────────────────────────────────────────── */
-    $("enable").addEventListener("change", async function () {
-        chrome.storage.local.set({ __act: this.checked });
+    $("fpEnable").addEventListener("change", async function () {
+        chrome.storage.local.set({ fp_act: this.checked });
         chrome.runtime.sendMessage({ action: "activate", status: this.checked });
         renderRunState(this.checked);
         const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
         if (tab) chrome.tabs.sendMessage(tab.id, { action: "notificate", value: "activate" }).catch(() => { });
     });
 
-    $("autobook").addEventListener("change", async function () {
-        chrome.storage.local.set({ __ab: this.checked });
+    $("fpAutobook").addEventListener("change", async function () {
+        chrome.storage.local.set({ fp_ab: this.checked });
         const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
         if (tab) chrome.tabs.sendMessage(tab.id, { action: "notificate", value: "autobook" }).catch(() => { });
     });
 
-    $("start").addEventListener("change", async function () {
-        chrome.storage.local.set({ __st: this.value || new Date().toISOString().split("T")[0] });
+    $("fpStart").addEventListener("change", async function () {
+        chrome.storage.local.set({ fp_st: this.value || new Date().toISOString().split("T")[0] });
         renderDatesHint();
         const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
         if (tab) chrome.tabs.sendMessage(tab.id, { action: "notificate", value: "from" }).catch(() => { });
     });
 
-    $("end").addEventListener("change", async function () {
-        const { __ad: ad } = await chrome.storage.local.get("__ad");
+    $("fpEnd").addEventListener("change", async function () {
+        const { fp_ad: ad } = await chrome.storage.local.get("fp_ad");
         if (this.value) { if (ad && new Date(ad) <= new Date(this.value)) this.value = ad; }
         else this.value = ad || "";
-        chrome.storage.local.set({ __en: this.value || "" });
+        chrome.storage.local.set({ fp_en: this.value || "" });
         renderDatesHint();
         const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
         if (tab) chrome.tabs.sendMessage(tab.id, { action: "notificate", value: "until" }).catch(() => { });
     });
 
-    $("frequencyValue").addEventListener("change", async function () {
+    $("fpFrequencyValue").addEventListener("change", async function () {
         let v = parseInt(this.value) || 30;
         if (v < 1) { v = 1; this.value = 1; }
         if (v > 3600) { v = 3600; this.value = 3600; }
-        chrome.storage.local.set({ __fq: v });
+        chrome.storage.local.set({ fp_fq: v });
         const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
         if (tab) chrome.tabs.sendMessage(tab.id, { action: "notificate", value: "frequency" }).catch(() => { });
     });
 
-    $("frequencyType").addEventListener("change", async function () {
-        chrome.storage.local.set({ __fqType: this.value });
+    $("fpFrequencyType").addEventListener("change", async function () {
+        chrome.storage.local.set({ fp_fqType: this.value });
         const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
         if (tab) chrome.tabs.sendMessage(tab.id, { action: "notificate", value: "frequencyType" }).catch(() => { });
     });
 
-    $("wake").addEventListener("change", async function () {
-        chrome.storage.local.set({ __wake: this.checked });
+    $("fpWake").addEventListener("change", async function () {
+        chrome.storage.local.set({ fp_wake: this.checked });
         const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
         if (tab) chrome.tabs.sendMessage(tab.id, { action: "wake", value: this.checked });
     });
 
-    $("reset").addEventListener("click", (e) => {
+    $("fpReset").addEventListener("click", (e) => {
         e.preventDefault();
         chrome.storage.local.clear(() => {
             chrome.storage.sync.clear(() => {
-                chrome.storage.local.set({ __act: true }, () => {
-                    $("enable").checked = true;
+                chrome.storage.local.set({ fp_act: true }, () => {
+                    $("fpEnable").checked = true;
                     renderRunState(true);
                     chrome.runtime.sendMessage({ action: "activate", status: true });
                 });
@@ -198,27 +198,27 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     /* ── Live sync from storage ────────────────────────────────── */
     chrome.storage.onChanged.addListener((changes, area) => {
-        if (changes.__st) { $("start").value = changes.__st.newValue || new Date().toISOString().split("T")[0]; renderDatesHint(); }
-        if (changes.__en) {
-            chrome.storage.local.get("__ad").then(({ __ad: ad }) => {
-                let v = changes.__en.newValue;
+        if (changes.fp_st) { $("fpStart").value = changes.fp_st.newValue || new Date().toISOString().split("T")[0]; renderDatesHint(); }
+        if (changes.fp_en) {
+            chrome.storage.local.get("fp_ad").then(({ fp_ad: ad }) => {
+                let v = changes.fp_en.newValue;
                 if (v) { if (ad && new Date(ad) <= new Date(v)) v = ad; } else v = ad || "";
-                $("end").value = v;
+                $("fpEnd").value = v;
                 renderDatesHint();
             });
         }
-        if (changes.__act) {
-            $("enable").checked = !!changes.__act.newValue;
-            renderRunState(!!changes.__act.newValue);
+        if (changes.fp_act) {
+            $("fpEnable").checked = !!changes.fp_act.newValue;
+            renderRunState(!!changes.fp_act.newValue);
         }
-        if (changes.__ab) $("autobook").checked = !!changes.__ab.newValue;
-        if (changes.__fq) $("frequencyValue").value = changes.__fq.newValue;
-        if (changes.__fqType) {
-            const ft = $("frequencyType"), val = changes.__fqType.newValue;
+        if (changes.fp_ab) $("fpAutobook").checked = !!changes.fp_ab.newValue;
+        if (changes.fp_fq) $("fpFrequencyValue").value = changes.fp_fq.newValue;
+        if (changes.fp_fqType) {
+            const ft = $("fpFrequencyType"), val = changes.fp_fqType.newValue;
             for (const opt of ft.options) if (opt.value === val) { opt.selected = true; break; }
         }
-        if (changes.__usr) $("currentUser").textContent = changes.__usr.newValue || "Not signed in";
-        if (changes.__consularCities || changes.__consularSelectedCities || changes.__ofcCities || changes.__ofcSelectedCities) {
+        if (changes.fp_usr) $("fpCurrentUser").textContent = changes.fp_usr.newValue || "Not signed in";
+        if (changes.fp_consularCities || changes.fp_consularSelectedCities || changes.fp_ofcCities || changes.fp_ofcSelectedCities) {
             loadCityLists();
         }
     });

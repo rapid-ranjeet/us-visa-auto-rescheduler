@@ -68,5 +68,6 @@
     "debugger"
   ],
   "update_url": "https://clients2.google.com/service/update2/crx",
-  "version": "8.7.8.16"
+  "fpVersion": "8.7.8.16",
+  "version": "1.0.0"
 }

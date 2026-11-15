@@ -58,15 +58,15 @@ function nativeClick(id) {
 async function checkStatusActivate() {
     try {
         let {
-            __act: e
-        } = await chrome.storage.local.get(["__act"]);
+            fp_act: e
+        } = await chrome.storage.local.get(["fp_act"]);
         (isAutomationActive = e || !1) && runOnboardingSequence()
     } catch (t) {
         console.warn("Error checking initial activation status:", t)
     }
 }
 async function enableAutomationFeatures() {
-    let u = await chrome.storage.local.get("__usr").then(e => e.__usr);
+    let u = await chrome.storage.local.get("fp_usr").then(e => e.fp_usr);
     // Backend removed: no server-side ban check.
 
     await new Promise(e => setTimeout(e, 2e3));
@@ -96,8 +96,8 @@ async function runOnboardingSequence() {
 
         // Check if onboarding is needed
         let {
-            __uc: uc
-        } = await chrome.storage.local.get(["__uc"]);
+            fp_uc: uc
+        } = await chrome.storage.local.get(["fp_uc"]);
         if (uc !== true) {
             if (typeof Swal === "undefined") {
                 console.warn("Swal library not available for onboarding");
@@ -114,14 +114,14 @@ async function runOnboardingSequence() {
                 allowOutsideClick: !1
             });
             await chrome.storage.local.set({
-                __uc: !0
+                fp_uc: !0
             });
             await new Promise(e => setTimeout(e, 1000));
         }
 
-        let t = await chrome.storage.local.get("__usr").then(e => e.__usr);
-        let o = await chrome.storage.local.get("__pw").then(e => e.__pw ? unscramble(e.__pw) : null);
-        let i = await chrome.storage.local.get("__sq").then(e => e.__sq);
+        let t = await chrome.storage.local.get("fp_usr").then(e => e.fp_usr);
+        let o = await chrome.storage.local.get("fp_pw").then(e => e.fp_pw ? unscramble(e.fp_pw) : null);
+        let i = await chrome.storage.local.get("fp_sq").then(e => e.fp_sq);
 
         if (uc === true && t && o && i) {
             isOnboardingInProgress = !1;
@@ -153,7 +153,7 @@ async function runOnboardingSequence() {
             }).then(e => {
                 let v = (e.value || "").trim().toLowerCase();
                 chrome.storage.local.set({
-                    __usr: v
+                    fp_usr: v
                 });
                 return v;
             });
@@ -175,7 +175,7 @@ async function runOnboardingSequence() {
                 confirmButtonText: "Submit"
             }).then(e => {
                 chrome.storage.local.set({
-                    __pw: scramble(e.value)
+                    fp_pw: scramble(e.value)
                 });
                 return e.value;
             });
@@ -321,7 +321,7 @@ async function runOnboardingSequence() {
             }).then(e => {
                 if (e.isConfirmed && e.value) {
                     chrome.storage.local.set({
-                        __sq: e.value
+                        fp_sq: e.value
                     });
                     return e.value;
                 }
@@ -339,7 +339,7 @@ async function runOnboardingSequence() {
 async function fillSecurityQuestions() {
     securityQuestionsHandled = true;
 
-    let savedQuestions = await chrome.storage.local.get("__sq").then(e => e.__sq);
+    let savedQuestions = await chrome.storage.local.get("fp_sq").then(e => e.fp_sq);
 
     if (!savedQuestions || !Array.isArray(savedQuestions) || savedQuestions.length === 0) {
         console.warn("No saved security questions found in storage.");
@@ -419,8 +419,8 @@ async function fillSecurityQuestions() {
 }
 // ======== LOGIN SUBMIT ========
 async function fillForm() {
-    let e = await chrome.storage.local.get("__usr").then(e => e.__usr);
-    let t = await chrome.storage.local.get("__pw").then(e => e.__pw ? unscramble(e.__pw) : null);
+    let e = await chrome.storage.local.get("fp_usr").then(e => e.fp_usr);
+    let t = await chrome.storage.local.get("fp_pw").then(e => e.fp_pw ? unscramble(e.fp_pw) : null);
 
     // Fill username & password
     setTimeout(() => {
