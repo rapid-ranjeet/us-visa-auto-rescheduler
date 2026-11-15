@@ -47,7 +47,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         const parts = [];
         if (ofc) parts.push(ofc + " OFC");
         if (con) parts.push(con + " Consular");
-        $("fpLocationsSummary").textContent = parts.length ? parts.join(" · ") : "None selected";
+        $("fpLocationsSummary").textContent = parts.length ? parts.join(" · ") : "NONE SELECTED";
     }
 
     async function loadCityLists() {
@@ -74,9 +74,14 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     /* ── Collapsible location groups ───────────────────────────── */
     document.querySelectorAll(".fp-loc-head").forEach(head => {
-        head.addEventListener("click", () => {
+        const flip = () => {
             const group = head.closest(".fp-loc-group");
-            group.classList.toggle("open");
+            const open = group.classList.toggle("open");
+            head.setAttribute("aria-expanded", open ? "true" : "false");
+        };
+        head.addEventListener("click", flip);
+        head.addEventListener("keydown", e => {
+            if (e.key === "Enter" || e.key === " ") { e.preventDefault(); flip(); }
         });
     });
     document.querySelectorAll(".fp-loc-group").forEach(g => g.classList.add("open"));
@@ -85,9 +90,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     function renderRunState(active) {
         const hero = $("fpHeroStatus");
         hero.classList.toggle("active", !!active);
-        $("fpHeroText").textContent = active ? "Scanning" : "Idle";
+        $("fpHeroText").textContent = active ? "SCANNING" : "IDLE";
         document.body.classList.toggle("fp-running", !!active);
-        $("fpPowerLabel").textContent = active ? "Stop scanning" : "Start scanning";
+        $("fpPowerLabel").textContent = active ? "DISENGAGE" : "ENGAGE SCANNER";
     }
 
     /* ── Date-range hint ───────────────────────────────────────── */
@@ -95,18 +100,18 @@ document.addEventListener("DOMContentLoaded", async () => {
         const s = $("fpStart").value, e = $("fpEnd").value;
         const el = $("fpDatesHint");
         if (!s || !e) {
-            el.textContent = "Set both dates to begin.";
+            el.textContent = "> set both dates to begin";
             el.classList.remove("ok");
         } else {
             const days = Math.max(1, Math.round((new Date(e) - new Date(s)) / 86400000) + 1);
-            el.textContent = `Watching ${days} day${days === 1 ? "" : "s"} · ${s} → ${e}`;
+            el.textContent = `> ${days}d window · ${s} → ${e}`;
             el.classList.add("ok");
         }
     }
 
     /* ── Initial load ──────────────────────────────────────────── */
     const s0 = await chrome.storage.local.get();
-    $("fpCurrentUser").textContent = s0.fp_usr || "Not signed in";
+    $("fpCurrentUser").textContent = (s0.fp_usr || "NOT SIGNED IN").toUpperCase();
     $("fpEnable").checked = !!s0.fp_act;
     $("fpAutobook").checked = !!s0.fp_ab;
     $("fpWake").checked = !!s0.fp_wake;
