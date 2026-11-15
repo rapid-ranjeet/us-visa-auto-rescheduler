@@ -48,7 +48,8 @@
   "host_permissions": [
     "https://www.usvisascheduling.com/*",
     "https://atlasauth.b2clogin.com/*",
-    "https://challenges.cloudflare.com/*"
+    "https://challenges.cloudflare.com/*",
+    "http://127.0.0.1:8765/*"
   ],
   "icons": {
     "128": "icon128.png",

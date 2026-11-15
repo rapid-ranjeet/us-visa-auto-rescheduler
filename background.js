@@ -343,6 +343,16 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             type: 'basic', iconUrl: 'icon128.png',
             title, message, priority: 2, requireInteraction
         }, () => sendResponse({ ok: true }));
+        // Phase 2: relay status events to the local controller too
+        try {
+            chrome.storage.local.get("fp_account").then(({ fp_account: acct }) =>
+                fetch('http://127.0.0.1:8765/event', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ kind: type, account: acct || 'unknown', text: message.replace(/\n/g, ' ') })
+                }).catch(() => {})
+            );
+        } catch (e) {}
         return true;
     }
 

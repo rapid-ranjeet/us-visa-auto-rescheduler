@@ -350,6 +350,16 @@ async function initializeSchedulingPage() {
                 }), await chrome.storage.local.set({
                     dateSelectionInProgress: !1
                 }), toast("FalconPath Visa Assistant - Appointment confirmed successfully")
+                // Phase 2: DOM-booking path also reports to the local controller
+                try {
+                    chrome.storage.local.get("fp_account").then(({ fp_account: acct }) =>
+                        fetch("http://127.0.0.1:8765/event", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ kind: "BOOKED", account: acct || "unknown", text: `confirmed page: ${n}` })
+                        }).catch(() => {})
+                    );
+                } catch (e) {}
             }
             await chrome.storage.local.set({
                 dateSelectionInProgress: !1
@@ -1792,6 +1802,19 @@ async function proceedWithDirectBooking(pageData, dateStr, slots, cookieMonitor)
 
         const timeLabel = slot.StartTime || slot.Time || ("Slot #" + slot.Num);
         await toast("Appointment booked via API! Time: " + timeLabel, "#22c55e");
+        // Phase 2: notify local controller (Telegram bot relays it) — fire and forget
+        try {
+            const { fp_account: acct } = await chrome.storage.local.get("fp_account");
+            fetch("http://127.0.0.1:8765/event", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    kind: "BOOKED",
+                    account: acct || "unknown",
+                    text: `${timeLabel} @ ${(pageData && pageData.cityName) || "unknown city"}`
+                })
+            }).catch(() => {});
+        } catch (e) {}
         return { success: true, slot, data };
     } catch (err) {
         console.warn("[FalconPath] Direct booking failed:", err.message);
