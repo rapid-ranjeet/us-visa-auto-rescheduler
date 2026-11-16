@@ -54,12 +54,26 @@ Then in Telegram:
 | `/stopall` | Stop everything |
 | `/remove acc1` | Forget account (profile dir kept) |
 | `/events` | Last 20 booking / rate-limit / Cloudflare events |
+| `/cancel` | Abort any in-progress wizard or edit |
 
 When a booking succeeds, the extension POSTs to `http://127.0.0.1:8765/event`
 → the bot relays it to your chat as `[BOOKED] [acc2] 2026-12-12 09:00 @ HYDERABAD`.
 
 The controller **never attaches to the tab** (no Playwright, no CDP). The
 extension owns the page and the Turnstile clicker. That's what makes it work.
+
+### Reminder notes
+
+The controller sends two kinds of nudges (background thread, checks every 5 min):
+
+- **Configured but stopped** — fires once per profile that has a `launch` event
+  in the log but is no longer running. Nudges you to `/startacc`.
+- **Booking without follow-up** — 24h after a `BOOKED` event, nudges you to
+  verify the OFC → consular → reschedule flow in the portal.
+
+Reminders are in-memory: a bot restart clears the "seen" flags, so the same
+reminder may fire once after a restart. That's by design — better a duplicate
+nudge than a silent miss.
 
 ## Phase 3 — fingerprint control (evidence-based)
 

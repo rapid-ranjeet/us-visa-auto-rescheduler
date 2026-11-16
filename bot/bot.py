@@ -487,6 +487,66 @@ def relay_events():
             pass
 
 
+# ── Reminder loop ─────────────────────────────────────────────────────
+# Nudges the user about things that are easy to forget:
+#   • a profile configured but not running
+#   • a BOOKED event with no follow-up within REMIND_BOOKED_HOURS
+#     (OFC → consular → reschedule flow still needs a human decision)
+# State is in memory — a controller restart clears "seen" flags and the
+# same reminder may fire once, which is fine.
+_REMIND_BOOKED_HOURS = 24
+_seen_stopped: set[str] = set()
+_seen_booked: set[str] = set()
+
+
+def reminder_loop():
+    chat = int(next(iter(ALLOWED)))
+    while True:
+        try:
+            accounts = launcher.load_accounts()
+            # 1) configured but stopped
+            for name in accounts:
+                if not launcher.running_pids(name) and name not in _seen_stopped:
+                    try:
+                        ev = json.load(open(EVENTS_PATH))
+                    except Exception:
+                        ev = []
+                    # only remind if a launch event exists (so we know it ran once)
+                    if any(e.get("kind") == "launch" and f"{name} " in e.get("text", "")
+                           for e in ev):
+                        _seen_stopped.add(name)
+                        send(chat, f"⏰ Reminder: `{name}` is configured but not "
+                                   f"running. /startacc {name} to resume.",
+                             silent_errors=True)
+            # 2) booking without follow-up
+            try:
+                ev = json.load(open(EVENTS_PATH))
+            except Exception:
+                ev = []
+            for e in ev:
+                if e.get("kind") != "BOOKED":
+                    continue
+                key = e.get("t") + "|" + e.get("text", "")
+                if key in _seen_booked:
+                    continue
+                try:
+                    ts = time.mktime(time.strptime(e["t"], "%Y-%m-%d %H:%M:%S"))
+                    if (time.time() - ts) < _REMIND_BOOKED_HOURS * 3600:
+                        continue
+                except Exception:
+                    continue
+                _seen_booked.add(key)
+                send(chat, f"⏰ Reminder: booking from {e['t']} has no follow-up "
+                           f"after {_REMIND_BOOKED_HOURS}h.\n"
+                           f"  {e['text']}\n"
+                           f"Check the OFC → consular → reschedule flow in the "
+                           f"portal if you haven't already.",
+                     silent_errors=True)
+        except Exception as e:
+            print("reminder error:", e)
+        time.sleep(300)  # 5 min
+
+
 def poll_loop():
     offset = 0
     while True:
@@ -507,6 +567,7 @@ def main():
     server = ThreadingHTTPServer(("127.0.0.1", LISTEN_PORT), EventHook)
     threading.Thread(target=server.serve_forever, daemon=True).start()
     threading.Thread(target=relay_events, daemon=True).start()
+    threading.Thread(target=reminder_loop, daemon=True).start()
     print(f"event hook on 127.0.0.1:{LISTEN_PORT}; polling Telegram…")
     poll_loop()
 
