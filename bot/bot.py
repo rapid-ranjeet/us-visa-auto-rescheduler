@@ -210,11 +210,135 @@ def wizard_step(chat_id, w, text):
 HELP = ("FalconPath controller.\n\n"
         "/add — add an account (wizard)\n"
         "/accounts — status of all accounts\n"
+        "/settings <name> — view config\n"
+        "/set <name> <field> — edit one field\n"
         "/startacc <name> — seed + launch\n"
         "/stopacc <name> — stop\n"
         "/stopall — stop everything\n"
-        "/remove <name> — forget account\n"
-        "/events — recent booking events")
+        "/remove <name> — forget account (alias /delacc)\n"
+        "/events — recent booking events\n"
+        "/cancel — abandon current wizard/edit")
+
+
+def fmt_account(name, a):
+    sec = a.get("security") or []
+    itv = a.get("interval") or {}
+    d = a.get("dates") or {}
+    c = a.get("cities") or {}
+    return (f"`{name}`\n"
+            f"  email: {a.get('email', '?')}\n"
+            f"  password: {'•' * 8} (use /set {name} password)\n"
+            f"  security: {len(sec)}/3 answered\n"
+            f"  dates: {d.get('from', '?')} → {d.get('to', '?')}\n"
+            f"  interval: every {itv.get('value', '?')} {itv.get('unit', 'seconds')}\n"
+            f"  ofc: {', '.join(c.get('ofc') or []) or '—'}\n"
+            f"  consular: {', '.join(c.get('consular') or []) or '—'}\n"
+            f"  auto_book: {'on' if a.get('auto_book', True) else 'off'}")
+
+
+EDIT_FIELDS = {
+    "email": "email",
+    "password": "password",
+    "q1": "security[0].q", "a1": "security[0].a",
+    "q2": "security[1].q", "a2": "security[1].a",
+    "q3": "security[2].q", "a3": "security[2].a",
+    "from": "dates.from", "to": "dates.to",
+    "interval_value": "interval.value", "interval_unit": "interval.unit",
+    "cities": "cities (ofc first, then consular, one per line)",
+    "auto_book": "auto_book (on/off)",
+}
+
+
+def settings_view(chat_id, name, accounts):
+    a = accounts[name]
+    out = fmt_account(name, a)
+    out += "\n\nEditable fields:\n" + "\n".join(
+        f"  /set {name} {k}" for k in EDIT_FIELDS)
+    out += "\n\n/startacc " + name + " to apply."
+    send(chat_id, out)
+
+
+def begin_edit(chat_id, name, field):
+    accounts = launcher.load_accounts()
+    if name not in accounts:
+        send(chat_id, f"unknown account: {name}")
+        return
+    if field not in EDIT_FIELDS:
+        send(chat_id, "unknown field. Editable: " + ", ".join(EDIT_FIELDS))
+        return
+    w = {"_edit": name, "_field": field}
+    # Pre-fill for fields where we want a numbered list (security questions)
+    WIZ[chat_id] = w
+    if field[0] == "q" and field[1:].isdigit():
+        send(chat_id, prompt_for(field))
+    elif field == "auto_book":
+        cur = accounts[name].get("auto_book", True)
+        send(chat_id, f"auto_book is currently {'on' if cur else 'off'}. Send `on` or `off`.")
+    else:
+        send(chat_id, f"Send new value for `{EDIT_FIELDS[field]}`:")
+
+
+def commit_edit(chat_id, name, field, text):
+    accounts = launcher.load_accounts()
+    a = accounts[name]
+    t = (text or "").strip()
+    if field == "email":
+        a["email"] = t.lower()
+    elif field == "password":
+        if not t:
+            send(chat_id, "empty — aborted"); return
+        a["password"] = t
+    elif field[0] == "q" and field[1:].isdigit():
+        if t not in QSLUGS:
+            send(chat_id, "send a number from the list"); return
+        idx = int(field[1]) - 1
+        a.setdefault("security", [{}, {}, {}])
+        while len(a["security"]) < 3:
+            a["security"].append({})
+        a["security"][idx]["q"] = QSLUGS[t]
+    elif field[0] == "a" and field[1:].isdigit():
+        if not t:
+            send(chat_id, "empty — aborted"); return
+        idx = int(field[1]) - 1
+        a.setdefault("security", [{}, {}, {}])
+        while len(a["security"]) < 3:
+            a["security"].append({})
+        a["security"][idx]["a"] = t
+    elif field == "from":
+        import datetime
+        try: datetime.date.fromisoformat(t)
+        except ValueError:
+            send(chat_id, "Format: YYYY-MM-DD"); return
+        a.setdefault("dates", {})["from"] = t
+    elif field == "to":
+        import datetime
+        try: d = datetime.date.fromisoformat(t)
+        except ValueError:
+            send(chat_id, "Format: YYYY-MM-DD"); return
+        a.setdefault("dates", {})["to"] = t
+    elif field == "interval_value":
+        if not t.isdigit() or int(t) < 5:
+            send(chat_id, "Number >= 5."); return
+        a.setdefault("interval", {})["value"] = int(t)
+    elif field == "interval_unit":
+        if t not in ("seconds", "minutes", "hours"):
+            send(chat_id, "seconds / minutes / hours"); return
+        a.setdefault("interval", {})["unit"] = t
+    elif field == "cities":
+        lines = [x.strip().upper() for x in t.splitlines() if x.strip()]
+        a["cities"] = {
+            "ofc": [x for x in lines if "VAC" in x],
+            "consular": [x for x in lines if "VAC" not in x],
+        }
+    elif field == "auto_book":
+        if t.lower() not in ("on", "off"):
+            send(chat_id, "send `on` or `off`"); return
+        a["auto_book"] = (t.lower() == "on")
+    launcher.save_accounts(accounts)
+    WIZ.pop(chat_id, None)
+    send(chat_id, f"updated `{name}`.{EDIT_FIELDS[field]}\n\n{fmt_account(name, a)}\n\n"
+                  f"/startacc {name} to apply (must be stopped first).")
+
 
 
 def handle(chat_id, user_id, text):
@@ -222,16 +346,45 @@ def handle(chat_id, user_id, text):
         return
     text = (text or "").strip()
     if chat_id in WIZ and not text.startswith("/"):
-        wizard_step(chat_id, WIZ[chat_id], text)
+        w = WIZ[chat_id]
+        if w.get("_edit"):
+            commit_edit(chat_id, w["_edit"], w["_field"], text)
+        else:
+            wizard_step(chat_id, w, text)
         return
     parts = text.split()
     cmd, args = (parts[0].split("@")[0] if parts else ""), parts[1:]
 
     if cmd == "/start":
         send(chat_id, HELP)
+    elif cmd == "/cancel":
+        if chat_id in WIZ:
+            WIZ.pop(chat_id, None)
+            send(chat_id, "aborted")
+        else:
+            send(chat_id, "nothing to cancel")
     elif cmd == "/add":
         WIZ[chat_id] = {}
-        send(chat_id, "New account wizard.\n" + prompt_for("email"))
+        send(chat_id, "New account wizard.\n" + prompt_for("email") +
+             "\n\n(/cancel to abort)")
+    elif cmd == "/settings":
+        accounts = launcher.load_accounts()
+        if not args:
+            if not accounts:
+                send(chat_id, "no accounts — /add")
+                return
+            send(chat_id, "Usage: /settings <name>\n\n" +
+                 "\n".join(f"  `{n}`" for n in accounts))
+            return
+        if args[0] not in accounts:
+            send(chat_id, f"unknown account: {args[0]}")
+            return
+        settings_view(chat_id, args[0], accounts)
+    elif cmd == "/set":
+        if len(args) < 2:
+            send(chat_id, "usage: /set <name> <field>\nfields: " + ", ".join(EDIT_FIELDS))
+            return
+        begin_edit(chat_id, args[0], args[1])
     elif cmd == "/accounts":
         send(chat_id, "\n".join(launcher.status_lines()))
     elif cmd == "/startacc":
@@ -260,7 +413,7 @@ def handle(chat_id, user_id, text):
         accounts = launcher.load_accounts()
         n = sum(1 for name in accounts if launcher.stop(name))
         send(chat_id, f"stopped {n} profile(s)")
-    elif cmd == "/remove":
+    elif cmd in ("/remove", "/delacc"):
         accounts = launcher.load_accounts()
         if args and args[0] in accounts:
             launcher.stop(args[0])
