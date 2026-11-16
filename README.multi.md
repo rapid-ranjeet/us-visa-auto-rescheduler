@@ -36,6 +36,13 @@ export FALCON_TG_ALLOWED="123456789"    # your numeric user id (@userinfobot)
 python3 bot/bot.py
 ```
 
+**No display on the server?** `launcher.py` auto-starts a private Xvfb per
+profile when `DISPLAY` is unset — install `xvfb` (apt) and it just works.
+Display numbers are derived from the account name, so N profiles get N
+isolated virtual screens without collisions. The X server is torn down with
+the browser. On a real desktop, `DISPLAY` is already set and Chrome uses
+your monitor directly — Xvfb is skipped.
+
 Then in Telegram:
 
 | Command | Effect |

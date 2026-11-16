@@ -17,11 +17,13 @@ Storage format verified against a live Chrome profile: keys are plain,
 values are compact JSON bytes.
 """
 import base64
+import hashlib
 import json
 import os
 import shutil
 import subprocess
 import sys
+import threading
 import time
 
 EXT_ID = "hemhplgafablbphgcnadfefolicfdiga"   # stable: manifest.json carries "key"
@@ -145,14 +147,66 @@ def profile_cmd(name):
     ]
 
 
+TRACKED: dict[str, subprocess.Popen] = {}
+
+
 def launch(name):
+    """Spawn the browser on a real or virtual display.
+
+    Real display available  -> use it as-is.
+    No display (headless server) -> start a private Xvfb for this profile,
+    record its pid, and tear it down when the browser exits (daemon thread).
+    """
     cmd = profile_cmd(name)
-    p = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    env = os.environ.copy()
+    xvfb_pid = None
+    if not env.get("DISPLAY"):
+        x = shutil.which("Xvfb")
+        if not x:
+            raise SystemExit(
+                "no DISPLAY and no Xvfb — install xvfb (apt install xvfb) "
+                "or run with a real display"
+            )
+        display = f":{90 + (int(hashlib.md5(name.encode()).hexdigest(), 16) % 500)}"
+        xvfb = subprocess.Popen(
+            [x, display, "-screen", "0", "1920x1080x24", "-nolisten", "tcp"],
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        )
+        for _ in range(30):
+            if os.path.exists(f"/tmp/.X11-unix/X{display[1:]}"):
+                break
+            time.sleep(0.2)
+        env["DISPLAY"] = display
+        xvfb_pid = xvfb.pid
+
+    p = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                         env=env, start_new_session=True)
+    TRACKED[name] = p
+
+    if xvfb_pid is not None:
+        # Poll (not wait): Chrome children can hold stdio pipes open, so
+        # wait() never returns. poll() doesn't depend on the pipes.
+        def _cleanup():
+            while p.poll() is None:
+                time.sleep(1)
+            try:
+                os.kill(xvfb_pid, 15)
+            except ProcessLookupError:
+                pass
+        threading.Thread(target=_cleanup, daemon=True).start()
     return p.pid
 
 
 def running_pids(name):
-    """pgrep -f is exact-substring; the user-data-dir path is unique per profile."""
+    """Prefer the tracked Popen from launch(); fall back to pgrep -f for
+    browser instances started outside this process (e.g. via the shell
+    script)."""
+    p = TRACKED.get(name)
+    if p is not None:
+        if p.poll() is None:
+            return [p.pid]
+        TRACKED.pop(name, None)
+        return []
     needle = f"--user-data-dir={os.path.join(PROFILES, name)}"
     try:
         out = subprocess.run(["pgrep", "-f", needle], capture_output=True, text=True)
@@ -165,16 +219,25 @@ def stop(name):
     pids = running_pids(name)
     for pid in pids:
         try:
-            os.kill(pid, 15)
-        except ProcessLookupError:
-            pass
-    if pids:
-        time.sleep(1)
-        for pid in running_pids(name):
+            # Kill the whole process group: Chrome spawns children that would
+            # otherwise survive a single-SIGTERM to the parent.
+            os.killpg(pid, 15)
+        except (ProcessLookupError, PermissionError):
             try:
-                os.kill(pid, 9)
+                os.kill(pid, 15)
             except ProcessLookupError:
                 pass
+    if pids:
+        time.sleep(1)
+        for pid in pids:
+            try:
+                os.killpg(pid, 9)
+            except (ProcessLookupError, PermissionError):
+                try:
+                    os.kill(pid, 9)
+                except ProcessLookupError:
+                    pass
+        TRACKED.pop(name, None)
     return bool(pids)
 
 

@@ -33,12 +33,37 @@ mkdir -p "$PROFILE_ROOT"
 echo "Browser : $BROWSER"
 echo "Profiles: $N (stagger ${STAGGER}s, interval rotation: ${INTERVALS[*]:0:$N})"
 
+# Auto-Xvfb when no real display (headless server). Each profile gets its own
+# virtual screen at :{900+i} so they don't collide. Torn down on script exit.
+declare -a XVFBS=()
+ORIGINAL_DISPLAY="${DISPLAY:-}"
+if [ -z "$ORIGINAL_DISPLAY" ] && command -v Xvfb >/dev/null 2>&1; then
+    echo "No \$DISPLAY — auto-starting Xvfb per profile"
+    cleanup() {
+        for pid in "${XVFBS[@]:-}"; do
+            [ -n "$pid" ] && kill "$pid" 2>/dev/null || true
+        done
+    }
+    trap cleanup EXIT
+fi
+
 pids=()
 for i in $(seq 1 "$N"); do
     dir="$PROFILE_ROOT/acc$i"
     mkdir -p "$dir"
-    echo "[acc$i] launching → $dir"
-    "$BROWSER" \
+
+    if [ -z "$ORIGINAL_DISPLAY" ] && command -v Xvfb >/dev/null 2>&1; then
+        dnum=$((900 + i))
+        Xvfb ":$dnum" -screen 0 1920x1080x24 -nolisten tcp &
+        XVFBS+=("$!")
+        sleep 1
+        export DISPLAY=":$dnum"
+    else
+        export DISPLAY="$ORIGINAL_DISPLAY"
+    fi
+
+    echo "[acc$i] launching → $dir (DISPLAY=$DISPLAY)"
+    setsid "$BROWSER" \
         --user-data-dir="$dir" \
         --load-extension="$EXT_DIR" \
         --no-first-run \
