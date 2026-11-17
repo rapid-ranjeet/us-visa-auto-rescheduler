@@ -330,7 +330,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                       'Come back at: ' + (request.blockedUntil || '12 hours from now') + '\n' +
                       'Do NOT restart the extension or log in/out until then.';
             requireInteraction = true; // stays until dismissed
-        } else if (type === 'WAITING_ROOM') {
+        } else if (type === 'RATE_LIMIT_BAN') {
+            title   = '⛔ FalconPath — Cloudflare IP Ban (Error 1015)';
+            message = 'Your IP was rate-limited. The extension stopped all reloads so the ban is not extended.\n' +
+                      'Wait it out (15 min – 1 hr), then turn the extension off, reload, and turn it back on.';
+            requireInteraction = true; // stays until dismissed
+                } else if (type === 'WAITING_ROOM') {
             title   = 'FalconPath — In Cloudflare Queue';
             message = 'Extension paused. Will resume automatically when access is granted.';
         } else {

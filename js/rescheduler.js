@@ -96,6 +96,9 @@ async function checkStatusActivate() {
         // Priority 0: Check if a previous "exceeded limit" block is still active
         if (await checkExceededLimitBlock()) return;
 
+        // Priority 0b: Cloudflare 1015 IP ban (halt reloads immediately)
+        if (getRateLimitBanPage()) { await handleRateLimitBan(); return; }
+
         // Priority 1: Detect "exceeded limit" on current page (with 2s confirm)
         if (getExceededLimitPage()) {
             await new Promise(r => setTimeout(r, 2000));
@@ -375,6 +378,7 @@ async function initializeSchedulingPage() {
     setupAlertInterceptListener();
     // Bail out immediately if "exceeded limit" block is still active
     if (await checkExceededLimitBlock()) return;
+    if (getRateLimitBanPage()) { await handleRateLimitBan(); return; }
     if (getExceededLimitPage()) {
         await new Promise(r => setTimeout(r, 2000));
         if (getExceededLimitPage()) { await handleExceededLimit(); return; }
@@ -609,6 +613,9 @@ async function runCityScanLoop(baseData, cookieMonitor, isOFC) {
     startSyncInterval();
     startCFKeepalive();
     while (isSchedulerActive) {
+        // ── Priority 0: Cloudflare 1015 IP ban — must halt ALL reloads ────────────
+        if (getRateLimitBanPage()) { await handleRateLimitBan(); return; }
+
         // ── Priority 1: Embassy rate limit ("You have exceeded the limit") ────
         // Confirm with a 2s delay to avoid false-positives on brief page transitions
         if (getExceededLimitPage()) {
@@ -1357,6 +1364,7 @@ function startCFKeepalive() {
     stopCFKeepalive();
     cfKeepaliveTimer = setInterval(async () => {
         if (!isSchedulerActive) return;
+        if (getRateLimitBanPage()) return; // never reload while IP-banned
         const { dateSelectionInProgress } = await chrome.storage.local.get("dateSelectionInProgress");
         if (dateSelectionInProgress) return;
         const now = Date.now();
@@ -1469,6 +1477,45 @@ async function handlePSE0501() {
 const EXCEEDED_LIMIT_HOURS = 12;
 let exceededLimitHandled = false;
 
+// ── Cloudflare IP ban (Error 1015 "You are being rate limited") ────────────────────────────
+// IP-LEVEL ban — harsher than the embassy account limit. Clears ONLY by waiting.
+// Reloading during the ban RESETS/extends it, so the critical behavior is:
+// detect it and STOP all reloads completely.
+function getRateLimitBanPage() {
+    try {
+        const text = (document.body && document.body.innerText) || '';
+        if (text.includes('You are being rate limited') || text.includes('banned you temporarily')) return true;
+        if (/Error\s*1015\b/.test(text)) return true;
+        const title = (document.title || '').trim();
+        if (/Error\s*1015\b/.test(title)) return true;
+    } catch (e) {}
+    return false;
+}
+
+function showRateLimitBanBanner() {
+    ['fp-captcha-banner', 'fp-cf-overlay', 'fp-exceeded-banner'].forEach(id => {
+        const el = document.getElementById(id); if (el) el.remove();
+    });
+    if (document.getElementById('fp-1015-banner')) return;
+    const div = document.createElement('div');
+    div.id = 'fp-1015-banner';
+    div.style.cssText = [
+        'position:fixed', 'top:0', 'left:0', 'right:0', 'z-index:2147483647',
+        'background:#7f1d1d', 'color:#fff', 'font-family:sans-serif',
+        'font-size:14px', 'padding:14px 20px', 'text-align:center',
+        'box-shadow:0 4px 24px rgba(0,0,0,.7)', 'line-height:1.6'
+    ].join(';');
+    div.innerHTML =
+        '⛔ <b>FALCONPATH STOPPED — Cloudflare IP ban (Error 1015)</b><br>' +
+        '<span style="font-weight:normal;font-size:12px">' +
+        'Your IP was rate-limited. This clears <b>only by waiting it out</b> — the extension has ' +
+        '<b>stopped all reloads</b> so the ban is not extended.<br>' +
+        'Leave this tab alone. When ready to retry: turn the extension OFF, wait, reload the page, ' +
+        'then turn it back ON. Typical bans: 15 min – 1 hr.' +
+        '</span>';
+    document.body.insertBefore(div, document.body.firstChild);
+}
+
 function getExceededLimitPage() {
     // Only match the EXACT CGI phrase — nothing broader.
     // Removed title-based checks entirely (too broad, false-positives on normal pages).
@@ -1523,6 +1570,32 @@ function showExceededLimitBanner(blockedUntil) {
 }
 
 let exceededLimitWatcher = null; // interval that polls for page recovery
+
+let rateLimitBanHandled = false;
+
+async function handleRateLimitBan() {
+    if (rateLimitBanHandled) return;
+    rateLimitBanHandled = true;
+
+    isSchedulerActive = false;
+    schedulingPageHandled = false;
+    cfReloadPending = true;   // block onCFFailure + keepalive reloads
+    cfRecoveryActive = true;
+    if (dateCheckInterval) { clearInterval(dateCheckInterval); dateCheckInterval = null; }
+    stopSyncInterval();
+    stopCFKeepalive();
+    stopCFPageWatcher();
+
+    showRateLimitBanBanner();
+
+    chrome.runtime.sendMessage({
+        action: 'showCFNotification',
+        notifType: 'RATE_LIMIT_BAN'
+    }).catch(() => {});
+
+    console.warn('[FalconPath] Cloudflare 1015 IP ban detected — all reloads halted. Wait it out, then reload manually.');
+    // Deliberately NO watcher and NO reload: any request extends the ban.
+}
 
 async function handleExceededLimit() {
     if (exceededLimitHandled) return;
