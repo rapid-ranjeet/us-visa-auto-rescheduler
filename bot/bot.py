@@ -36,7 +36,9 @@ import launcher
 BOT_TOKEN = os.environ.get("FALCON_TG_TOKEN", "")
 API = f"https://api.telegram.org/bot{BOT_TOKEN}/"
 ALLOWED = {x.strip() for x in os.environ.get("FALCON_TG_ALLOWED", "").split(",") if x.strip()}
-LISTEN_PORT = int(os.environ.get("FALCON_EVENT_PORT", "8765"))
+# Fixed port: the extension hardcodes 127.0.0.1:8765 in rescheduler.js +
+# background.js and cannot read env vars, so this must not be configurable.
+LISTEN_PORT = 8765
 
 EVENTS_PATH = os.path.join(launcher.ROOT, "events.json")
 MAX_EVENTS = 200
@@ -467,22 +469,24 @@ class EventHook(BaseHTTPRequestHandler):
 
 def relay_events():
     """Push un-relayed events to the first allowed chat.
-    Index watermark (not last-3 window) — concurrent bookings from N accounts
-    can land in one 2s tick, and a tail window would silently drop the older
-    ones. Watermark guarantees no event is skipped regardless of burst size."""
-    sent = 0
+    Uses the per-event `relayed` flag already written by log_event() — this
+    survives bot restarts (no in-memory watermark that resets to 0) and
+    handles list rotation (trimmed events are simply gone, not re-sent)."""
     while True:
         time.sleep(2)
         try:
             if not os.path.exists(EVENTS_PATH):
                 continue
             ev = json.load(open(EVENTS_PATH))
-            if len(ev) < sent:
-                sent = 0  # rotated
-            new = ev[sent:]
-            for e in new:
-                send(int(next(iter(ALLOWED))), f"[{e['kind']}] {e['text']}")
-            sent += len(new)
+            changed = False
+            for e in ev:
+                if not e.get("relayed", False):
+                    send(int(next(iter(ALLOWED))), f"[{e['kind']}] {e['text']}")
+                    e["relayed"] = True
+                    changed = True
+            if changed:
+                with open(EVENTS_PATH, "w") as f:
+                    json.dump(ev, f)
         except Exception:
             pass
 

@@ -2091,7 +2091,7 @@ schedulerPort.postMessage({
     action: "fetch_info"
 });
 chrome.runtime.onMessage.addListener((e, t, a) => {
-    "notificate" === e.action ? (toast("Changes saved successfully."), e.value && ("fpFrequencyValue" == e.value || "frequencyType" == e.value || "activate" == e.value || "autobook" == e.value) && location.reload()) : "wake" === e.action && (toast("Keep Awake saved successfully." + e.value), !0 === e.value ? chrome.runtime.connect({
+    "notificate" === e.action ? (toast("Changes saved successfully."), e.value && ("frequency" == e.value || "frequencyType" == e.value || "activate" == e.value || "autobook" == e.value) && location.reload()) : "wake" === e.action && (toast("Keep Awake saved successfully." + e.value), !0 === e.value ? chrome.runtime.connect({
         name: "scheduler"
     }).postMessage({
         action: "requestKeepAwake"

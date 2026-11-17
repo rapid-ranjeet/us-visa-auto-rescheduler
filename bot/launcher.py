@@ -68,7 +68,7 @@ def scramble(s):
         return s
 
 
-def build_storage(acc):
+def build_storage(name, acc):
     """Account config -> chrome.storage.local key/value map (values are Python JSON types)."""
     email = (acc.get("email") or "").strip().lower()
     if not email or not acc.get("password"):
@@ -122,7 +122,7 @@ def seed(name, acc):
 
     data_dir = os.path.join(PROFILES, name, "Default", "Local Extension Settings", EXT_ID)
     os.makedirs(data_dir, exist_ok=True)
-    store = build_storage(acc)
+    store = build_storage(name, acc)
     db = plyvel.DB(data_dir, create_if_missing=True)
     try:
         for k, v in store.items():
