@@ -1,5 +1,74 @@
-document.head.insertAdjacentHTML("beforeend", "<style>.swal2-modal :is(h2, p){color: initial; margin: 0;line-height: 1.25;}.swal2-modal p+p{margin-top: 1rem;}#consulate_date_time,#asc_date_time{display:block!important;}.swal2-select{width:auto!important;}.swal2-timer-progress-bar{background:rgba(255,255,255,0.6)!important;}.swal2-toast.swal2-show{background:rgba(0,0,0,0.75)!important;}</style>");
-const toast = async (e, t = "#8b5cf6") => {
+// ── Global SweetAlert2 theme — matches the popup design system ──────────
+// Applied to every Swal dialog on the portal (setup, onboarding, booking).
+document.head.insertAdjacentHTML("beforeend", `<style>
+  .swal2-container { backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
+  .swal2-popup {
+    background: #111A2C !important;
+    color: #EEF2F9 !important;
+    border: 1px solid #233049;
+    border-radius: 14px !important;
+    padding: 1.75em 1.5em 1.25em !important;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+    box-shadow: 0 24px 64px rgba(0,0,0,.5) !important;
+  }
+  .swal2-title {
+    color: #EEF2F9 !important;
+    font-size: 1.15rem !important;
+    font-weight: 600 !important;
+    letter-spacing: -0.01em;
+    margin: 0 0 .4em !important;
+  }
+  .swal2-html-container { color: #8A97AE !important; font-size: .92rem !important; line-height: 1.55 !important; }
+  .swal2-modal :is(h2, p) { color: #EEF2F9; margin: 0; line-height: 1.3; }
+  .swal2-modal p + p { margin-top: .6rem; }
+  .swal2-html-container p { color: #8A97AE !important; }
+  .swal2-html-container p + p { margin-top: .5rem; }
+  .swal2-confirm, .swal2-cancel {
+    border-radius: 9px !important;
+    font-weight: 600 !important;
+    font-size: .9rem !important;
+    padding: .6em 1.5em !important;
+    transition: filter .15s ease, background .15s ease, color .15s ease !important;
+  }
+  .swal2-confirm {
+    background: #5B8CFF !important;
+    color: #FFFFFF !important;
+    box-shadow: 0 4px 14px rgba(91,140,255,.3) !important;
+  }
+  .swal2-confirm:hover, .swal2-confirm:focus { filter: brightness(1.08) !important; background: #5B8CFF !important; }
+  .swal2-cancel {
+    background: #182339 !important;
+    color: #EEF2F9 !important;
+    border: 1px solid #233049 !important;
+  }
+  .swal2-cancel:hover, .swal2-cancel:focus { background: #233049 !important; color: #EEF2F9 !important; }
+  .swal2-actions { gap: .5em !important; margin-top: 1.4em !important; }
+  .swal2-input {
+    background: #182339 !important;
+    border: 1px solid #233049 !important;
+    border-radius: 9px !important;
+    color: #EEF2F9 !important;
+    font-size: .95rem !important;
+    transition: border-color .15s ease, box-shadow .15s ease !important;
+  }
+  .swal2-input:focus { border-color: #5B8CFF !important; box-shadow: 0 0 0 3px rgba(91,140,255,.18) !important; outline: none !important; }
+  .swal2-input::placeholder { color: #5A667E !important; }
+  .swal2-label { color: #8A97AE !important; font-size: .82rem !important; font-weight: 500 !important; }
+  .swal2-select { width: auto-vip-vip !important; color: #EEF2F9 !important; background-color: #182339 !important; border-radius: 8px !important; border-color: #233049 !important; }
+  .swal2-validation-message { background: rgba(242,109,109,.12) !important; color: #F26D6D !important; border-radius: 8px !important; font-size: .85rem !important; }
+  .swal2-icon { border-width: .2em !important; }
+  .swal2-success [class^=swal2-success-line] { background-color: #3FCF8E !important; }
+  .swal2-success .swal2-success-ring { border-color: rgba(63,207,142,.3) !important; }
+  .swal2-warning { border-color: rgba(245,165,36,.4) !important; color: #F5A524 !important; }
+  .swal2-error { border-color: rgba(242,109,109,.4) !important; color: #F26D6D !important; }
+  .swal2-info { border-color: rgba(91,140,255,.4) !important; color: #5B8CFF !important; }
+  .swal2-timer-progress-bar { background: #5B8CFF !important; }
+  .swal2-timer-progress-bar-container { background: rgba(255,255,255,.08) !important; }
+  .swal2-close { color: #8A97AE !important; }
+  .swal2-close:hover { color: #EEF2F9 !important; background: rgba(255,255,255,.06) !important; }
+  #consulate_date_time,#asc_date_time{display:block!important;}
+</style>`);
+const toast = async (e, t = "#5B8CFF") => {
     let a = await getCheckFrequencyMs() || 59e3;
     Toastify({
         text: e,
@@ -9,7 +78,8 @@ const toast = async (e, t = "#8b5cf6") => {
         position: "left",
         stopOnFocus: !0,
         style: {
-            background: t
+            background: "#111A2C",
+            borderLeft: "3px solid " + t
         },
         onClick: function() {}
     }).showToast()
@@ -161,7 +231,7 @@ async function reconcilePendingSelections(kind, oldMap, newRealMap) {
         [selectedKey]: upgraded
     });
     if (dropped.length) {
-        toast(`Couldn't confirm a matching ${kind === "ofc" ? "OFC" : "Consular"} location for: ${dropped.join(", ")}. Please re-check it in the extension popup if it's still needed.`, "#dc3545");
+        toast(`Couldn't confirm a matching ${kind === "ofc" ? "OFC" : "Consular"} location for: ${dropped.join(", ")}. Please re-check it in the extension popup if it's still needed.`, "#F26D6D");
     }
 }
 
@@ -192,29 +262,29 @@ async function showLocationSetupModal() {
         consularIds = Object.keys(consularCities);
 
     function buildChecklist(prefix, cities, ids) {
-        if (!ids.length) return `<div style="padding:8px 4px;color:#94a3b8;font-size:12px;">Not detected yet — you can add these later from the extension popup once this list loads.</div>`;
+        if (!ids.length) return `<div style="padding:8px 4px;color:#8A97AE;font-size:12px;">Not detected yet — you can add these later from the extension popup once this list loads.</div>`;
         return ids.sort((a, b) => cities[a].localeCompare(cities[b])).map(cid => `
             <div style="display:flex;align-items:center;gap:8px;padding:7px 4px;">
-                <input type="checkbox" id="setup_${prefix}_${escapeHtml(cid)}" style="width:15px;height:15px;margin:0;accent-color:#8b5cf6;cursor:pointer;flex-shrink:0;">
-                <label for="setup_${prefix}_${escapeHtml(cid)}" style="font-size:14.5px;line-height:15px;color:#f1f5f9;cursor:pointer;">${escapeHtml(cities[cid])}</label>
+                <input type="checkbox" id="setup_${prefix}_${escapeHtml(cid)}" style="width:15px;height:15px;margin:0;accent-color:#5B8CFF;cursor:pointer;flex-shrink:0;">
+                <label for="setup_${prefix}_${escapeHtml(cid)}" style="font-size:14.5px;line-height:15px;color:#EEF2F9;cursor:pointer;">${escapeHtml(cities[cid])}</label>
             </div>`).join("");
     }
 
     const html = `
         <div style="text-align:left;">
-            <p style="margin:0 0 12px;color:#94a3b8;font-size:13px;">Choose the locations to monitor and your date range, then start checking.</p>
-            <div style="font-weight:700;color:#22d3ee;font-size:11px;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">OFC / Biometric Locations</div>
-            <div style="background:rgba(15,15,35,0.7);border:1px solid rgba(139,92,246,0.2);border-radius:8px;padding:6px;margin-bottom:14px;">${buildChecklist("ofc", ofcCities, ofcIds)}</div>
-            <div style="font-weight:700;color:#22d3ee;font-size:11px;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Consular Locations</div>
-            <div style="background:rgba(15,15,35,0.7);border:1px solid rgba(139,92,246,0.2);border-radius:8px;padding:6px;margin-bottom:14px;">${buildChecklist("consular", consularCities, consularIds)}</div>
+            <p style="margin:0 0 12px;color:#8A97AE;font-size:13px;">Choose the locations to monitor and your date range, then start checking.</p>
+            <div style="font-weight:700;color:#5B8CFF;font-size:11px;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">OFC / Biometric Locations</div>
+            <div style="background:#182339;border:1px solid #233049;border-radius:8px;padding:6px;margin-bottom:14px;">${buildChecklist("ofc", ofcCities, ofcIds)}</div>
+            <div style="font-weight:700;color:#5B8CFF;font-size:11px;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Consular Locations</div>
+            <div style="background:#182339;border:1px solid #233049;border-radius:8px;padding:6px;margin-bottom:14px;">${buildChecklist("consular", consularCities, consularIds)}</div>
             <div style="display:flex;gap:10px;">
                 <div style="flex:1;">
-                    <label style="display:block;font-size:11px;color:#64748b;margin-bottom:4px;">EARLIEST DATE</label>
-                    <input type="date" id="setup_start_date" value="${escapeHtml(stored.fp_st || "")}" style="width:100%;padding:8px;background:rgba(15,15,35,0.7);border:1px solid rgba(139,92,246,0.2);border-radius:8px;color:#f1f5f9;box-sizing:border-box;">
+                    <label style="display:block;font-size:11px;color:#8A97AE;margin-bottom:4px;">EARLIEST DATE</label>
+                    <input type="date" id="setup_start_date" value="${escapeHtml(stored.fp_st || "")}" style="width:100%;padding:8px;background:#182339;border:1px solid #233049;border-radius:8px;color:#EEF2F9;box-sizing:border-box;">
                 </div>
                 <div style="flex:1;">
-                    <label style="display:block;font-size:11px;color:#64748b;margin-bottom:4px;">LATEST DATE</label>
-                    <input type="date" id="setup_end_date" value="${escapeHtml(stored.fp_en || "")}" style="width:100%;padding:8px;background:rgba(15,15,35,0.7);border:1px solid rgba(139,92,246,0.2);border-radius:8px;color:#f1f5f9;box-sizing:border-box;">
+                    <label style="display:block;font-size:11px;color:#8A97AE;margin-bottom:4px;">LATEST DATE</label>
+                    <input type="date" id="setup_end_date" value="${escapeHtml(stored.fp_en || "")}" style="width:100%;padding:8px;background:#182339;border:1px solid #233049;border-radius:8px;color:#EEF2F9;box-sizing:border-box;">
                 </div>
             </div>
         </div>`;
@@ -394,7 +464,7 @@ async function initializeSchedulingPage() {
             // Uses link.href (DOM property = fully-resolved absolute URL) instead
             // of getAttribute("href") which returns the raw relative string.
             // This eliminates the double /en-US/en-US/ bug entirely.
-            toast("FalconPath Visa Assistant — finding scheduling link...", "#8b5cf6");
+            toast("FalconPath Visa Assistant — finding scheduling link...", "#5B8CFF");
             (async () => {
                 const sanitizeNav = (url) => url.replace(/\/en-US\/en-US\//gi, "/en-US/");
 
@@ -406,7 +476,7 @@ async function initializeSchedulingPage() {
                     const rescheduleEl = document.getElementById("reschedule_appointment");
                     if (rescheduleEl && rescheduleEl.href) {
                         const dest = sanitizeNav(rescheduleEl.href); // absolute URL from DOM
-                        toast("Existing appointment detected — navigating to reschedule page...", "#22c55e");
+                        toast("Existing appointment detected — navigating to reschedule page...", "#3FCF8E");
                         await new Promise(r => setTimeout(r, 400));
                         window.location.replace(dest);
                         return;
@@ -419,13 +489,13 @@ async function initializeSchedulingPage() {
                                     document.querySelector("a[href*='/schedule/']");
                     if (freshEl && freshEl.href) {
                         const dest = sanitizeNav(freshEl.href); // absolute URL from DOM
-                        toast("Fresh account — navigating to scheduling page...", "#22c55e");
+                        toast("Fresh account — navigating to scheduling page...", "#3FCF8E");
                         await new Promise(r => setTimeout(r, 400));
                         window.location.replace(dest);
                         return;
                     }
                 }
-                toast("Could not find scheduling link — please click 'Schedule Appointment' or 'Reschedule Appointment' in the sidebar manually.", "#f59e0b");
+                toast("Could not find scheduling link — please click 'Schedule Appointment' or 'Reschedule Appointment' in the sidebar manually.", "#F5A524");
             })();
             return
         }
@@ -480,7 +550,7 @@ async function initializeSchedulingPage() {
         await tryStartConsular()
     } catch (_) {
         if (console.error("Error initializing scheduling page:", _), console.error("Error stack:", _.stack), document.querySelector("span[data-translate='error']")) {
-            toast("Error dates not found trying again...", "#dc3545"), await new Promise(e => setTimeout(e, 4e4)), window.location.replace(window.location.href);
+            toast("Error dates not found trying again...", "#F26D6D"), await new Promise(e => setTimeout(e, 4e4)), window.location.replace(window.location.href);
             return
         }
     }
@@ -553,7 +623,7 @@ async function runCityScanLoop(baseData, cookieMonitor, isOFC) {
         // ── Priority 3: CGI generic server error page ─────────────────────────
         const serverErrPage = getServerErrorPage();
         if (serverErrPage) {
-            toast('Server error page detected — triggering session refresh...', '#dc3545');
+            toast('Server error page detected — triggering session refresh...', '#F26D6D');
             await triggerLevel1Recovery();
             return;
         }
@@ -566,7 +636,7 @@ async function runCityScanLoop(baseData, cookieMonitor, isOFC) {
         if (!selected.length) {
             if (!notifiedEmpty) {
                 let msg = selectedAll.length ? `Waiting to detect ${typeLabel} locations. Visit the ${typeLabel} scheduling page once to activate your selected picks.` : `No ${typeLabel} locations selected. Choose locations in the extension popup.`;
-                toast(msg, "#dc3545");
+                toast(msg, "#F26D6D");
                 if (!selectedAll.length) chrome.runtime.sendMessage({
                     action: "openPopup"
                 }, e => {
@@ -619,7 +689,7 @@ async function runCityScanLoop(baseData, cookieMonitor, isOFC) {
         if (result.status && result.status !== 200) {
             consecutiveFailures++;
             let backoff = Math.min(baseDelay * Math.pow(2, consecutiveFailures), 5 * 60 * 1000);
-            await toast(`${typeLabel} check for ${cityData.cityName} returned an error (status ${result.status}). Pausing ~${Math.round(backoff / 1000)}s to avoid a rate limit...`, "#dc3545");
+            await toast(`${typeLabel} check for ${cityData.cityName} returned an error (status ${result.status}). Pausing ~${Math.round(backoff / 1000)}s to avoid a rate limit...`, "#F26D6D");
             await new Promise(r => setTimeout(r, backoff))
         } else {
             consecutiveFailures = 0;
@@ -770,12 +840,12 @@ async function checkConsularCityDates(e, t) {
                 status: 200
             }
         }
-        return await toast(`No dates found\nLocation: ${e.cityName || "Unknown"}\nSearching between: ${o} - ${n}\nYour current appointment: ${r}`, "#dc3545"), {
+        return await toast(`No dates found\nLocation: ${e.cityName || "Unknown"}\nSearching between: ${o} - ${n}\nYour current appointment: ${r}`, "#F26D6D"), {
             matched: !1,
             status: 200
         }
     } catch (O) {
-        console.error(`Date check failed for ${e.cityName || "Unknown"}:`, O), await toast(`Error checking dates: ${O.message}\nLocation: ${e.cityName || "Unknown"}\nYour current appointment: ${r}`, "#dc3545");
+        console.error(`Date check failed for ${e.cityName || "Unknown"}:`, O), await toast(`Error checking dates: ${O.message}\nLocation: ${e.cityName || "Unknown"}\nYour current appointment: ${r}`, "#F26D6D");
         return {
             matched: !1,
             status: (O && O.status) || null
@@ -928,12 +998,12 @@ async function checkOFCCityDates(e, t) {
                 status: 200
             }
         }
-        return await toast(`No OFC dates available\nCity: ${e.cityName}\nSearching between: ${o} - ${n}`, "#dc3545"), {
+        return await toast(`No OFC dates available\nCity: ${e.cityName}\nSearching between: ${o} - ${n}`, "#F26D6D"), {
             matched: !1,
             status: 200
         }
     } catch (j) {
-        console.error("OFC date check failed:", j), await toast(`Error checking OFC dates: ${j.message}\nCity: ${e.cityName || "Unknown"}\nChecked @ ${new Date().toLocaleString()}`, "#dc3545");
+        console.error("OFC date check failed:", j), await toast(`Error checking OFC dates: ${j.message}\nCity: ${e.cityName || "Unknown"}\nChecked @ ${new Date().toLocaleString()}`, "#F26D6D");
         return {
             matched: !1,
             status: (j && j.status) || null
@@ -1207,11 +1277,11 @@ async function triggerLevel1Recovery() {
     toast(
         "3× 403 detected — pausing 15s then navigating to home page for fresh cookies..." +
         "\n(Avoids embassy IP-ban from too many rapid reloads)",
-        "#f59e0b"
+        "#F5A524"
     );
     await new Promise(r => setTimeout(r, 15000));
 
-    toast("Navigating to home page — will auto-return to scheduling page...", "#f59e0b");
+    toast("Navigating to home page — will auto-return to scheduling page...", "#F5A524");
     cfLastReloadAt   = Date.now();
     cfRecoveryActive = false;
     cfReloadPending  = false;
@@ -1235,7 +1305,7 @@ async function triggerLevel2Recovery() {
 
     toast(
         "5× 403 after session refresh — signing out and back in for a completely fresh session...",
-        "#dc3545"
+        "#F26D6D"
     );
     await new Promise(r => setTimeout(r, 4000));
 
@@ -1262,7 +1332,7 @@ async function triggerLevel2Recovery() {
 
     if (!signedOut) {
         // Fallback: navigate directly to the logout endpoint
-        toast("Sign-out link not found — navigating to logout URL...", "#dc3545");
+        toast("Sign-out link not found — navigating to logout URL...", "#F26D6D");
         window.location.replace("https://www.usvisascheduling.com/en-US/logout");
     }
     // After sign-out the site redirects to the B2C login page.
@@ -1292,7 +1362,7 @@ function startCFKeepalive() {
         const now = Date.now();
         if ((now - cfLastReloadAt) < 7 * 60 * 1000) return;
         cfLastReloadAt = now;
-        toast("Refreshing session (CF keepalive — every 7 min for 24/7 operation)...", "#8b5cf6");
+        toast("Refreshing session (CF keepalive — every 7 min for 24/7 operation)...", "#5B8CFF");
         setTimeout(() => window.location.reload(), 1500);
     }, 7 * 60 * 1000);
 }
@@ -1361,12 +1431,12 @@ async function handlePSE0501() {
     toast(
         `PSE0501 error #${pse0501Count} — server cannot load appointment days.\n` +
         `Pausing ${pauseMins} min then resuming. (Repeated occurrences increase pause.)`,
-        '#dc3545'
+        '#F26D6D'
     );
 
     // If PSE0501 keeps repeating, escalate to Level 1 recovery after 3 times
     if (pse0501Count >= 3) {
-        toast('PSE0501 repeated 3× — escalating to home page session refresh...', '#dc3545');
+        toast('PSE0501 repeated 3× — escalating to home page session refresh...', '#F26D6D');
         pse0501Count    = 0;
         pse0501PauseActive = false;
         await triggerLevel1Recovery();
@@ -1382,7 +1452,7 @@ async function handlePSE0501() {
         schedulingPageHandled = false;
         startSyncInterval();
         startCFKeepalive();
-        toast(`Resuming after PSE0501 pause (${pauseMins} min)...`, '#22c55e');
+        toast(`Resuming after PSE0501 pause (${pauseMins} min)...`, '#3FCF8E');
         await initializeSchedulingPage();
     }
 }
@@ -1505,7 +1575,7 @@ async function handleExceededLimit() {
         const banner = document.getElementById('fp-exceeded-banner');
         if (banner) banner.remove();
 
-        toast('Rate limit cleared on this account — resuming scan...', '#22c55e');
+        toast('Rate limit cleared on this account — resuming scan...', '#3FCF8E');
         console.log('[FalconPath] Exceeded-limit resolved — resuming');
 
         const { fp_act } = await chrome.storage.local.get('fp_act');
@@ -1598,9 +1668,9 @@ function startCFPageWatcher() {
                 cfPageToastShown = true;
                 if (current === 'CHALLENGE') {
                     showCaptchaOverlay();
-                    toast('Still waiting for CAPTCHA — click "Verify you are human" to continue.', '#dc3545');
+                    toast('Still waiting for CAPTCHA — click "Verify you are human" to continue.', '#F26D6D');
                 } else {
-                    toast('Still in Cloudflare queue — extension paused. Auto-resuming when access is granted.', '#f59e0b');
+                    toast('Still in Cloudflare queue — extension paused. Auto-resuming when access is granted.', '#F5A524');
                 }
                 setTimeout(() => { cfPageToastShown = false; }, 30000);
             }
@@ -1613,7 +1683,7 @@ function startCFPageWatcher() {
         cfChallengeReloadDone = false;
         cfReloadPending = false;
         removeCaptchaOverlay();
-        toast('Access granted — resuming date scan...', '#22c55e');
+        toast('Access granted — resuming date scan...', '#3FCF8E');
         await new Promise(r => setTimeout(r, 1500));
         const { fp_act } = await chrome.storage.local.get('fp_act');
         if (fp_act) {
@@ -1645,7 +1715,7 @@ async function handleCloudflarePage(pageType) {
         toast(
             'Cloudflare Waiting Room — extension fully paused.\n' +
             'Estimated wait: ~1-5 min. Will resume automatically when access is granted.',
-            '#f59e0b'
+            '#F5A524'
         );
         chrome.runtime.sendMessage({ action: 'showCFNotification', notifType: 'WAITING_ROOM' }).catch(() => {});
         startCFPageWatcher();
@@ -1653,10 +1723,10 @@ async function handleCloudflarePage(pageType) {
     }
 
     // ── CHALLENGE (CAPTCHA) — multi-step auto-solve attempt ──────────────────
-    toast('Cloudflare CAPTCHA detected — attempting auto-verify...', '#f59e0b');
+    toast('Cloudflare CAPTCHA detected — attempting auto-verify...', '#F5A524');
 
     // Step 1: Wait 10s for Turnstile iframe to fully load and render
-    toast('Waiting 10s for Turnstile to render...', '#f59e0b');
+    toast('Waiting 10s for Turnstile to render...', '#F5A524');
     await new Promise(r => setTimeout(r, 10000));
 
     // ── Primary approach: CDP trusted mouse click ──────────────────────────
@@ -1672,10 +1742,10 @@ async function handleCloudflarePage(pageType) {
     } catch(e) {}
 
     if (clickResult.clicked) {
-        toast('CDP trusted click sent to Turnstile checkbox — waiting for verification...', '#22c55e');
+        toast('CDP trusted click sent to Turnstile checkbox — waiting for verification...', '#3FCF8E');
     } else {
         // CDP failed (e.g. iframe not found yet) — try allFrames scripting as backup
-        toast('CDP attempt 1: ' + (clickResult.reason || clickResult.error || 'position not found yet — will retry...'), '#f59e0b');
+        toast('CDP attempt 1: ' + (clickResult.reason || clickResult.error || 'position not found yet — will retry...'), '#F5A524');
         try {
             await new Promise((resolve) => {
                 chrome.runtime.sendMessage({ action: 'attemptTurnstileClick' }, resolve);
@@ -1692,7 +1762,7 @@ async function handleCloudflarePage(pageType) {
     }
 
     // Step 3: Retry CDP click (maybe iframe finished loading on second attempt)
-    toast('Still showing — re-polling for Turnstile position and retrying trusted click...', '#f59e0b');
+    toast('Still showing — re-polling for Turnstile position and retrying trusted click...', '#F5A524');
     try {
         await new Promise((resolve) => {
             chrome.runtime.sendMessage({ action: 'attemptTurnstileClickCDP' }, resolve);
@@ -1708,7 +1778,7 @@ async function handleCloudflarePage(pageType) {
     // Step 4: Try ONE page reload (fresh page load sometimes auto-passes Turnstile)
     if (!cfChallengeReloadDone) {
         cfChallengeReloadDone = true;
-        toast('Retrying with fresh page reload — Turnstile often auto-passes on clean load...', '#f59e0b');
+        toast('Retrying with fresh page reload — Turnstile often auto-passes on clean load...', '#F5A524');
         await new Promise(r => setTimeout(r, 2000));
         window.location.reload();
         return;
@@ -1719,7 +1789,7 @@ async function handleCloudflarePage(pageType) {
     toast(
         'Auto-solve exhausted — please click "Verify you are human" checkbox manually.\n' +
         'Scanning resumes automatically once verified.',
-        '#dc3545'
+        '#F26D6D'
     );
     chrome.runtime.sendMessage({ action: 'showCFNotification', notifType: 'CHALLENGE' }).catch(() => {});
     cfReloadPending = false;
@@ -1801,7 +1871,7 @@ async function proceedWithDirectBooking(pageData, dateStr, slots, cookieMonitor)
         if (data.HasError) throw new Error(data.ErrorString || data.LocalizedGenericErrorMessage || "Booking API error");
 
         const timeLabel = slot.StartTime || slot.Time || ("Slot #" + slot.Num);
-        await toast("Appointment booked via API! Time: " + timeLabel, "#22c55e");
+        await toast("Appointment booked via API! Time: " + timeLabel, "#3FCF8E");
         // Phase 2: notify local controller (Telegram bot relays it) — fire and forget
         try {
             const { fp_account: acct } = await chrome.storage.local.get("fp_account");
@@ -1957,7 +2027,7 @@ async function selectTimes() {
         } else {
             const res = await Swal.fire({
                 title: "Date and time found!",
-                html: `<p style="color:lightblue">Time: ${time}</p><p>Slots: ${avail}</p><p>Book now?</p>`,
+                html: `<p style="color:#5B8CFF;font-weight:600">Time: ${time}</p><p>Slots: ${avail}</p><p>Book now?</p>`,
                 icon: "success",
                 showCancelButton: true,
                 confirmButtonText: "Book Now!",

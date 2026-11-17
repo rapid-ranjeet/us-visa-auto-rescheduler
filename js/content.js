@@ -187,7 +187,7 @@ async function runOnboardingSequence() {
                 html: `
               <style>
                 .fp-square-input {
-                    border-radius: 4px !important;
+                    border-radius: 9px !important;
                     font-family: inherit !important;
                 }
                 .question-answer-container { margin-bottom: 1em; text-align: left; }
@@ -196,24 +196,24 @@ async function runOnboardingSequence() {
                     margin-bottom: .5em; 
                     height: 44px;
                     padding: 0 12px; 
-                    border: 1px solid #555; 
-                    border-radius: 4px; 
+                    border: 1px solid #233049; 
+                    border-radius: 9px; 
                     box-sizing: border-box; 
                     font-family: inherit; 
-                    background: transparent;
-                    color: inherit;
+                    background: #182339;
+                    color: #EEF2F9;
                     font-size: 14px;
                 }
                 .answer-input { 
                     width: 100%; 
                     height: 44px;
                     padding: 0 12px; 
-                    border: 1px solid #555; 
-                    border-radius: 4px; 
+                    border: 1px solid #233049; 
+                    border-radius: 9px; 
                     box-sizing: border-box; 
                     font-family: inherit;
-                    background: transparent;
-                    color: inherit;
+                    background: #182339;
+                    color: #EEF2F9;
                     font-size: 14px;
                 }
               </style>
