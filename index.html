@@ -4,113 +4,85 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FalconPath Visa Assistant</title>
+    <title>FalconPath · Visa Slot Watcher</title>
     <link rel="stylesheet" href="css/bootstrap.min.css">
     <link rel="stylesheet" href="css/interface.css">
 </head>
 
 <body>
 
-    <!-- ─── Terminal Top Bar ─────────────────────────────────────── -->
-    <header class="fp-topbar">
-        <div class="fp-topbar-left">
-            <svg class="fp-mark" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
-                <rect x="0" y="0" width="32" height="32" rx="4" fill="#0F172A" stroke="#334155"/>
-                <polygon points="5,10 12,8 18,9 26,5 29,7 24,12 21,17 15,20 12,27 10,20 7,15" fill="#16A34A"/>
-                <circle cx="24.5" cy="8.5" r="1" fill="#0F172A"/>
-            </svg>
-            <div class="fp-brand">
-                <span class="fp-brand-name">FALCONPATH</span>
-                <span class="fp-brand-sub">VISA&nbsp;RESCHEDULER</span>
-            </div>
-        </div>
-        <span class="fp-version" id="fpVersion"></span>
-    </header>
-
-    <!-- ─── Status Strip ─────────────────────────────────────────── -->
-    <div class="fp-statusline" id="fpHeroStatus" role="status" aria-live="polite">
-        <span class="fp-led" aria-hidden="true"></span>
-        <span class="fp-status-text" id="fpHeroText">IDLE</span>
-        <span class="fp-status-sep" aria-hidden="true">//</span>
-        <span class="fp-user" id="fpCurrentUser">NOT&nbsp;SIGNED&nbsp;IN</span>
-    </div>
-
-    <!-- ─── Primary Action ───────────────────────────────────────── -->
-    <div class="fp-power">
-        <input type="checkbox" id="fpEnable" class="fp-power-input">
-        <label for="fpEnable" class="fp-power-btn">
-            <svg class="fp-power-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                stroke-linecap="round" aria-hidden="true" focusable="false">
-                <path d="M12 3v9"/>
-                <path d="M6.3 6.3a8 8 0 1 0 11.4 0"/>
-            </svg>
-            <span id="fpPowerLabel">ENGAGE SCANNER</span>
-        </label>
-    </div>
-
-    <!-- ─── 01 · Behavior ────────────────────────────────────────── -->
-    <section class="fp-panel">
-        <div class="fp-panel-head">
-            <span class="fp-panel-index">01</span>
-            <span class="fp-panel-title">BEHAVIOR</span>
-        </div>
-
-        <label class="fp-switch-row" for="fpAutobook">
-            <span class="fp-switch-copy">
-                <span class="fp-switch-title">Auto-book</span>
-                <span class="fp-switch-sub">Confirm instantly when a slot matches the range</span>
-            </span>
-            <span class="fp-switch">
-                <input type="checkbox" id="fpAutobook" checked>
-                <span class="fp-switch-track" aria-hidden="true"></span>
-            </span>
-        </label>
-
-        <label class="fp-switch-row" for="fpWake">
-            <span class="fp-switch-copy">
-                <span class="fp-switch-title">Keep awake</span>
-                <span class="fp-switch-sub">Hold the display on during long scans</span>
-            </span>
-            <span class="fp-switch">
-                <input type="checkbox" id="fpWake">
-                <span class="fp-switch-track" aria-hidden="true"></span>
-            </span>
-        </label>
-    </section>
-
-    <!-- ─── 02 · Date Range ──────────────────────────────────────── -->
-    <section class="fp-panel">
-        <div class="fp-panel-head">
-            <span class="fp-panel-index">02</span>
-            <span class="fp-panel-title">DATE&nbsp;RANGE</span>
-        </div>
-        <div class="fp-dates">
-            <div class="fp-field">
-                <label for="fpStart">FROM</label>
-                <input type="date" id="fpStart">
-            </div>
-            <span class="fp-dates-arrow" aria-hidden="true">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round" focusable="false">
-                    <path d="M5 12h14M13 6l6 6-6 6"/>
+    <!-- ─── Header ───────────────────────────────────────────────── -->
+    <header class="app-head">
+        <div class="brand">
+            <span class="brand-mark" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 12l4-7 5 3 5-5 4 3-3 7-6 4-4-2z"/>
+                    <circle cx="18.5" cy="8.5" r="1"/>
                 </svg>
             </span>
-            <div class="fp-field">
-                <label for="fpEnd">TO</label>
+            <span class="brand-text">
+                <span class="brand-name">FalconPath</span>
+                <span class="brand-tag" id="fpVersion">v0.0.0</span>
+            </span>
+        </div>
+        <span class="head-status" id="fpHeroStatus" role="status" aria-live="polite">
+            <span class="head-dot" aria-hidden="true"></span>
+            <span id="fpHeroText">Idle</span>
+        </span>
+    </header>
+
+    <!-- ─── Account ──────────────────────────────────────────────── -->
+    <div class="account">
+        <span class="account-label">Signed in as</span>
+        <span class="account-user" id="fpCurrentUser">Not signed in</span>
+    </div>
+
+    <!-- ─── Primary control ──────────────────────────────────────── -->
+    <div class="run-card">
+        <input type="checkbox" id="fpEnable" class="run-input">
+        <label for="fpEnable" class="run-btn">
+            <span class="run-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 3v9"/>
+                    <path d="M6.3 6.3a8 8 0 1 0 11.4 0"/>
+                </svg>
+            </span>
+            <span class="run-copy">
+                <span class="run-label" id="fpPowerLabel">Start scanning</span>
+                <span class="run-sub">Watches for earlier slots in your range</span>
+            </span>
+        </label>
+    </div>
+
+    <!-- ─── Date range ───────────────────────────────────────────── -->
+    <section class="card">
+        <div class="card-head">
+            <h2 class="card-title">Date range</h2>
+            <span class="card-note" id="fpDatesHint">Set both dates to begin</span>
+        </div>
+        <div class="dates">
+            <div class="field">
+                <label for="fpStart">Earliest</label>
+                <input type="date" id="fpStart">
+            </div>
+            <span class="dates-sep" aria-hidden="true">→</span>
+            <div class="field">
+                <label for="fpEnd">Latest</label>
                 <input type="date" id="fpEnd">
             </div>
         </div>
-        <div class="fp-dates-hint" id="fpDatesHint">> set both dates to begin</div>
     </section>
 
-    <!-- ─── 03 · Scan Interval ───────────────────────────────────── -->
-    <section class="fp-panel">
-        <div class="fp-panel-head">
-            <span class="fp-panel-index">03</span>
-            <span class="fp-panel-title">SCAN&nbsp;INTERVAL</span>
+    <!-- ─── Scan interval ────────────────────────────────────────── -->
+    <section class="card">
+        <div class="card-head">
+            <h2 class="card-title">Check every</h2>
         </div>
-        <div class="fp-frequency">
-            <input type="number" id="fpFrequencyValue" min="1" max="3600" value="30" aria-label="Interval value">
+        <div class="freq">
+            <input type="number" id="fpFrequencyValue" min="1" max="3600" value="30" inputmode="numeric"
+                aria-label="Interval value">
             <select id="fpFrequencyType" aria-label="Interval unit">
                 <option selected value="seconds">seconds</option>
                 <option value="minutes">minutes</option>
@@ -119,71 +91,79 @@
         </div>
     </section>
 
-    <!-- ─── 04 · Locations ───────────────────────────────────────── -->
-    <section class="fp-panel">
-        <div class="fp-panel-head">
-            <span class="fp-panel-index">04</span>
-            <span class="fp-panel-title">LOCATIONS</span>
-            <span class="fp-panel-badge" id="fpLocationsSummary">NONE&nbsp;SELECTED</span>
-        </div>
-
-        <div class="fp-loc-group" data-group="ofc">
-            <div class="fp-loc-head" data-target="fpOfcPanel" role="button" tabindex="0" aria-expanded="true">
-                <span class="fp-loc-title">OFC · Biometrics</span>
-                <svg class="fp-loc-caret" viewBox="0 0 24 24" width="12" height="12" fill="none"
-                    stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" focusable="false">
-                    <path d="M6 9l6 6 6-6"/>
-                </svg>
-            </div>
-            <div class="fp-loc-panel" id="fpOfcPanel">
-                <div class="fp-city-list" id="fpOfcCityList"></div>
-            </div>
-        </div>
-
-        <div class="fp-loc-group" data-group="consular">
-            <div class="fp-loc-head" data-target="fpConsularPanel" role="button" tabindex="0" aria-expanded="true">
-                <span class="fp-loc-title">Consular · Interview</span>
-                <svg class="fp-loc-caret" viewBox="0 0 24 24" width="12" height="12" fill="none"
-                    stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" focusable="false">
-                    <path d="M6 9l6 6 6-6"/>
-                </svg>
-            </div>
-            <div class="fp-loc-panel" id="fpConsularPanel">
-                <div class="fp-city-list" id="fpConsularCityList"></div>
-            </div>
-        </div>
-
-        <p class="fp-loc-hint">Locations load after one visit to each scheduling page.</p>
+    <!-- ─── Behavior toggles ─────────────────────────────────────── -->
+    <section class="card card-flush">
+        <label class="toggle-row" for="fpauto-vipbook">
+            <span class="toggle-copy">
+                <span class="toggle-title">auto-vip-book</span>
+                <span class="toggle-sub">Confirm the best match auto-vipmatically</span>
+            </span>
+            <span class="toggle">
+                <input type="checkbox" id="fpAutobook" checked>
+                <span class="toggle-track" aria-hidden="true"></span>
+            </span>
+        </label>
+        <label class="toggle-row" for="fpWake">
+            <span class="toggle-copy">
+                <span class="toggle-title">Keep awake</span>
+                <span class="toggle-sub">Stop the screen sleeping mid-scan</span>
+            </span>
+            <span class="toggle">
+                <input type="checkbox" id="fpWake">
+                <span class="toggle-track" aria-hidden="true"></span>
+            </span>
+        </label>
     </section>
 
-    <!-- ─── Reset ────────────────────────────────────────────────── -->
-    <section class="fp-panel fp-panel-quiet">
-        <button id="fpReset" type="button" class="fp-reset">
-            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"
-                stroke-linecap="round" aria-hidden="true" focusable="false">
-                <path d="M3 12a9 9 0 1 0 3-6.7"/>
-                <path d="M3 4v5h5"/>
-            </svg>
-            <span>WIPE&nbsp;SETTINGS</span>
-        </button>
+    <!-- ─── Locations ────────────────────────────────────────────── -->
+    <section class="card">
+        <div class="card-head">
+            <h2 class="card-title">Locations</h2>
+            <span class="card-pill" id="fpLocationsSummary">None selected</span>
+        </div>
+
+        <div class="loc-group" data-group="ofc">
+            <button type="button" class="loc-head" data-target="fpOfcPanel" aria-expanded="true">
+                <span class="loc-title">OFC · Biometrics</span>
+                <svg class="loc-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" aria-hidden="true" focusable="false">
+                    <path d="M6 9l6 6 6-6"/>
+                </svg>
+            </button>
+            <div class="loc-panel" id="fpOfcPanel">
+                <div class="city-list" id="fpOfcCityList"></div>
+            </div>
+        </div>
+
+        <div class="loc-group" data-group="consular">
+            <button type="button" class="loc-head" data-target="fpConsularPanel" aria-expanded="true">
+                <span class="loc-title">Consular · Interview</span>
+                <svg class="loc-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" aria-hidden="true" focusable="false">
+                    <path d="M6 9l6 6 6-6"/>
+                </svg>
+            </button>
+            <div class="loc-panel" id="fpConsularPanel">
+                <div class="city-list" id="fpConsularCityList"></div>
+            </div>
+        </div>
+
+        <p class="hint">Lists appear after you open each scheduling page once.</p>
     </section>
 
     <!-- ─── Footer ───────────────────────────────────────────────── -->
-    <footer class="fp-footer">
-        <button class="fp-help-btn" data-bs-toggle="modal" data-bs-target="#faqs">
-            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"
-                stroke-linecap="round" aria-hidden="true" focusable="false">
-                <circle cx="12" cy="12" r="9"/>
-                <path d="M9.5 9a2.5 2.5 0 1 1 3.4 2.3c-.6.3-.9.8-.9 1.4v.3"/>
-                <circle cx="12" cy="17" r="0.5" fill="currentColor"/>
-            </svg>
-            <span>How it works</span>
+    <footer class="app-foot">
+        <button type="button" class="ghost-btn" data-bs-toggle="modal" data-bs-target="#faqs">
+            How it works
+        </button>
+        <button id="fpReset" type="button" class="ghost-btn danger">
+            Reset everything
         </button>
     </footer>
 
-    <!-- ─── FAQ Modal ────────────────────────────────────────────── -->
+    <!-- ─── Help modal ───────────────────────────────────────────── -->
     <div class="modal fade" id="faqs" tabindex="-1" aria-labelledby="faqsLabel" aria-hidden="true">
-        <div class="modal-dialog modal-xl">
+        <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="faqsLabel">How FalconPath works</h5>
@@ -192,81 +172,78 @@
                 <div class="modal-body">
                     <div class="accordion" id="faqs-accordion">
 
-                        <div class="accordion-element">
+                        <div class="accordion-item">
                             <h2 class="accordion-header">
                                 <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
                                     data-bs-target="#collapse-0" aria-expanded="false">
-                                    What does FalconPath do?
+                                    What does it do?
                                 </button>
                             </h2>
-                            <div class="accordion-collapse collapse" data-bs-parent="#faqs-accordion">
+                            <div id="collapse-0" class="accordion-collapse collapse" data-bs-parent="#faqs-accordion">
                                 <div class="accordion-body">
-                                    It watches the US visa scheduling portal for open dates inside the range you pick,
-                                    and can auto-book the earliest match. No credits, no subscriptions — just a browser
-                                    extension.
+                                    It watches the US visa scheduling portal for dates inside your range and can
+                                    book the earliest match auto-vipmatically. No credits, no subscription.
                                 </div>
                             </div>
                         </div>
 
-                        <div class="accordion-element">
+                        <div class="accordion-item">
                             <h2 class="accordion-header">
                                 <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
                                     data-bs-target="#collapse-1" aria-expanded="false">
-                                    Which countries are supported?
+                                    Where does it work?
                                 </button>
                             </h2>
-                            <div class="accordion-collapse collapse" data-bs-parent="#faqs-accordion">
+                            <div id="collapse-1" class="accordion-collapse collapse" data-bs-parent="#faqs-accordion">
                                 <div class="accordion-body">
-                                    Any CGI Federal scheduling site built on <code>usvisascheduling.com</code>: India,
-                                    Australia, United Arab Emirates, Türkiye.
-                                    <a target="_blank" href="https://www.usvisascheduling.com/"
-                                        style="color: var(--fp-accent);">Open the portal →</a>
+                                    Any CGI Federal scheduling site on <code>usvisascheduling.com</code> — India,
+                                    Australia, UAE, Türkiye.
                                 </div>
                             </div>
                         </div>
 
-                        <div class="accordion-element">
+                        <div class="accordion-item">
                             <h2 class="accordion-header">
                                 <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
                                     data-bs-target="#collapse-2" aria-expanded="false">
-                                    How do I get started?
+                                    Getting started
                                 </button>
                             </h2>
-                            <div class="accordion-collapse collapse" data-bs-parent="#faqs-accordion">
+                            <div id="collapse-2" class="accordion-collapse collapse" data-bs-parent="#faqs-accordion">
                                 <div class="accordion-body">
-                                    1. Sign in to the portal (the assistant fills it once you give it your details).<br>
-                                    2. Visit the OFC and Consular scheduling pages once so the city lists populate.<br>
-                                    3. Pick cities, set your date range, choose a scan interval.<br>
-                                    4. Hit <b>ENGAGE SCANNER</b> and leave the tab open.
+                                    1. Sign in to the portal.<br>
+                                    2. Open the OFC and Consular pages once so locations load.<br>
+                                    3. Pick locations, set a date range and interval.<br>
+                                    4. Press <b>Start scanning</b> and leave the tab open.
                                 </div>
                             </div>
                         </div>
 
-                        <div class="accordion-element">
+                        <div class="accordion-item">
                             <h2 class="accordion-header">
                                 <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
                                     data-bs-target="#collapse-3" aria-expanded="false">
-                                    What happens when a slot is found?
+                                    When a slot is found
                                 </button>
                             </h2>
-                            <div class="accordion-collapse collapse" data-bs-parent="#faqs-accordion">
+                            <div id="collapse-3" class="accordion-collapse collapse" data-bs-parent="#faqs-accordion">
                                 <div class="accordion-body">
-                                    With <b>Auto-book</b> on, the extension picks the earliest matching time and
-                                    confirms it. With it off, it just notifies you and lets you confirm manually.
+                                    With <b>auto-vip-book</b> on it books the earliest matching time. Turn it off to be
+                                    notified and confirm yourself.
                                 </div>
                             </div>
                         </div>
 
-                        <div class="accordion-element">
+                        <div class="accordion-item">
                             <h2 class="accordion-header">
                                 <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
                                     data-bs-target="#collapse-4" aria-expanded="false">
                                     Is this allowed?
                                 </button>
                             </h2>
-                            <div class="accordion-collapse collapse" data-bs-parent="#faqs-accordion">
+                            <div id="collapse-4" class="accordion-collapse collapse" data-bs-parent="#faqs-accordion">
                                 <div class="accordion-body">
-                                    Automated rescheduling is not endorsed by CGI Federal or the U.S. Department of
+                                    auto-vipmated rescheduling is not endorsed by CGI Federal or the U.S. Department of
                                     State. You are responsible for how you use this tool.
                                 </div>
                             </div>
@@ -274,7 +251,7 @@
 
                     </div>
                 </div>
-                <div class="modal-footer m-auto">
+                <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                 </div>
             </div>

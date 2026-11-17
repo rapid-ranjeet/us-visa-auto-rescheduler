@@ -11,13 +11,13 @@ document.addEventListener("DOMContentLoaded", async () => {
         selected = Array.isArray(selected) ? selected : [];
         const ids = Object.keys(allCities);
         if (!ids.length) {
-            container.innerHTML = `<div class="fp-city-empty">Visit the matching scheduling page once to load locations.</div>`;
+            container.innerHTML = `<div class="city-empty">Open the matching scheduling page once to load locations.</div>`;
             return;
         }
         container.innerHTML = "";
         ids.sort((a, b) => allCities[a].localeCompare(allCities[b])).forEach(id => {
             const row = document.createElement("label");
-            row.className = "fp-city-item";
+            row.className = "city-item";
             const box = document.createElement("input");
             box.type = "checkbox";
             box.checked = selected.includes(id);
@@ -73,9 +73,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
 
     /* ── Collapsible location groups ───────────────────────────── */
-    document.querySelectorAll(".fp-loc-head").forEach(head => {
+    document.querySelectorAll(".loc-head").forEach(head => {
         const flip = () => {
-            const group = head.closest(".fp-loc-group");
+            const group = head.closest(".loc-group");
             const open = group.classList.toggle("open");
             head.setAttribute("aria-expanded", open ? "true" : "false");
         };
@@ -84,15 +84,15 @@ document.addEventListener("DOMContentLoaded", async () => {
             if (e.key === "Enter" || e.key === " ") { e.preventDefault(); flip(); }
         });
     });
-    document.querySelectorAll(".fp-loc-group").forEach(g => g.classList.add("open"));
+    document.querySelectorAll(".loc-group").forEach(g => g.classList.add("open"));
 
     /* ── Hero status + power button ────────────────────────────── */
     function renderRunState(active) {
         const hero = $("fpHeroStatus");
         hero.classList.toggle("active", !!active);
-        $("fpHeroText").textContent = active ? "SCANNING" : "IDLE";
+        $("fpHeroText").textContent = active ? "Scanning" : "Idle";
         document.body.classList.toggle("fp-running", !!active);
-        $("fpPowerLabel").textContent = active ? "DISENGAGE" : "ENGAGE SCANNER";
+        $("fpPowerLabel").textContent = active ? "Stop scanning" : "Start scanning";
     }
 
     /* ── Date-range hint ───────────────────────────────────────── */
@@ -100,18 +100,18 @@ document.addEventListener("DOMContentLoaded", async () => {
         const s = $("fpStart").value, e = $("fpEnd").value;
         const el = $("fpDatesHint");
         if (!s || !e) {
-            el.textContent = "> set both dates to begin";
+            el.textContent = "Set both dates to begin";
             el.classList.remove("ok");
         } else {
             const days = Math.max(1, Math.round((new Date(e) - new Date(s)) / 86400000) + 1);
-            el.textContent = `> ${days}d window · ${s} → ${e}`;
+            el.textContent = `${days}d window · ${s} → ${e}`;
             el.classList.add("ok");
         }
     }
 
     /* ── Initial load ──────────────────────────────────────────── */
     const s0 = await chrome.storage.local.get();
-    $("fpCurrentUser").textContent = (s0.fp_usr || "NOT SIGNED IN").toUpperCase();
+    $("fpCurrentUser").textContent = (s0.fp_usr || "Not signed in");
     $("fpEnable").checked = !!s0.fp_act;
     $("fpAutobook").checked = !!s0.fp_ab;
     $("fpWake").checked = !!s0.fp_wake;
