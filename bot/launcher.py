@@ -68,11 +68,19 @@ def scramble(s):
         return s
 
 
+def _date(s):
+    """Parse YYYY-MM-DD; raises ValueError on bad input."""
+    import datetime
+    return datetime.date.fromisoformat(s)
+
+
 def build_storage(name, acc):
     """Account config -> chrome.storage.local key/value map (values are Python JSON types)."""
     email = (acc.get("email") or "").strip().lower()
     if not email or not acc.get("password"):
         raise ValueError("account needs email and password")
+    if "@" not in email:
+        raise ValueError("email does not look like an email address")
 
     sec = acc.get("security") or []
     if len(sec) != 3 or any(not q.get("q") or not q.get("a") for q in sec):
@@ -81,11 +89,24 @@ def build_storage(name, acc):
     dates = acc.get("dates") or {}
     if not dates.get("from") or not dates.get("to"):
         raise ValueError("dates.from and dates.to are required")
+    try:
+        if _date(dates["to"]) <= _date(dates["from"]):
+            raise ValueError("dates.to must be after dates.from")
+    except ValueError as e:
+        if "does not match" in str(e) or "Invalid isoformat" in str(e) or "time data" in str(e):
+            raise ValueError("dates.from/to must be YYYY-MM-DD")
+        raise
 
     itv = acc.get("interval") or {}
     unit = itv.get("unit", "seconds")
     if unit not in ("seconds", "minutes", "hours"):
         raise ValueError("interval.unit must be seconds|minutes|hours")
+    try:
+        value = int(itv.get("value", 30))
+    except (TypeError, ValueError):
+        raise ValueError("interval.value must be a number")
+    if value < 5:
+        raise ValueError("interval.value must be >= 5")
 
     cities = acc.get("cities") or {}
     cons = [c for c in (cities.get("consular") or []) if c]
@@ -106,7 +127,7 @@ def build_storage(name, acc):
         "fp_ab": bool(acc.get("auto_book", True)),
         "fp_st": dates["from"],
         "fp_en": dates["to"],
-        "fp_fq": int(itv.get("value", 30)),
+        "fp_fq": value,
         "fp_fqType": unit,
         "fp_consularCities": cons_map,
         "fp_consularSelectedCities": list(cons_map),

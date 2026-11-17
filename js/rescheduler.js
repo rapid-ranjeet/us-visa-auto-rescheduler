@@ -2005,9 +2005,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 }), window.addEventListener("beforeunload", () => {
     dateCheckInterval && (clearInterval(dateCheckInterval), dateCheckInterval = null)
 });
-const schedulerPort = chrome.runtime.connect({
-    name: "scheduler"
-});
+let schedulerPort = null;
+wireSchedulerPort();
 
 function stopAllOperations() {
     dateCheckInterval && (clearInterval(dateCheckInterval), dateCheckInterval = null);
@@ -2067,29 +2066,32 @@ async function fetchFamilyMembers(e, t, a) {
     }
 }
 // FIX Bug #16: schedulerPort.onConnect is not a valid Port property (removed dead code)
-schedulerPort.onDisconnect && schedulerPort.onDisconnect.addListener(function() {
-    setTimeout(() => {
-        try {
-            chrome.runtime.connect({
-                name: "scheduler_reconnect"
-            })
-        } catch (e) {
-            console.error("rescheduler.js: Failed to reconnect port:", e)
+function wireSchedulerPort() {
+    schedulerPort = chrome.runtime.connect({
+        name: "scheduler"
+    });
+    schedulerPort.onDisconnect.addListener(function() {
+        setTimeout(() => {
+            try {
+                wireSchedulerPort();
+            } catch (e) {
+                console.error("rescheduler.js: Failed to reconnect port:", e)
+            }
+        }, 5e3)
+    });
+    schedulerPort.onMessage.addListener(async function(e) {
+        if ("fetch_info" == e.action) {
+            let t = e.data.$active;
+            isSchedulerActive = t, t ? await validateToContinue() || initializeSchedulingPage() : stopAllOperations()
+        } else if ("activate" == e.action) {
+            let a = e.status;
+            isSchedulerActive = a, a ? initializeSchedulingPage() : stopAllOperations()
         }
-    }, 5e3)
-});
-schedulerPort.onMessage.addListener(async function(e) {
-    if ("fetch_info" == e.action) {
-        let t = e.data.$active;
-        isSchedulerActive = t, t ? await validateToContinue() || initializeSchedulingPage() : stopAllOperations()
-    } else if ("activate" == e.action) {
-        let a = e.status;
-        isSchedulerActive = a, a ? initializeSchedulingPage() : stopAllOperations()
-    }
-});
-schedulerPort.postMessage({
-    action: "fetch_info"
-});
+    });
+    schedulerPort.postMessage({
+        action: "fetch_info"
+    });
+}
 chrome.runtime.onMessage.addListener((e, t, a) => {
     "notificate" === e.action ? (toast("Changes saved successfully."), e.value && ("frequency" == e.value || "frequencyType" == e.value || "activate" == e.value || "autobook" == e.value) && location.reload()) : "wake" === e.action && (toast("Keep Awake saved successfully." + e.value), !0 === e.value ? chrome.runtime.connect({
         name: "scheduler"
