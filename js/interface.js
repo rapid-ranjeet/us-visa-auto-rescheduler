@@ -4,14 +4,28 @@ document.addEventListener("DOMContentLoaded", async () => {
     $("fpVersion").textContent = "v" + chrome.runtime.getManifest().version;
 
     /* ── Location lists ────────────────────────────────────────── */
-    function renderCityList(containerId, allCities, selected) {
+    // The portal only exposes its location dropdown on the matching scheduling
+    // page, and rescheduler.js only scrapes it once the scanner is engaged. So an
+    // empty list here is expected until then — give the user a direct jump.
+    const SCHEDULE_URL = {
+        ofc: "https://www.usvisascheduling.com/en-US/ofc-schedule/",
+        consular: "https://www.usvisascheduling.com/en-US/schedule-consular/"
+    };
+
+    function renderCityList(containerId, allCities, selected, kind) {
         const container = $(containerId);
         if (!container) return;
         allCities = allCities || {};
         selected = Array.isArray(selected) ? selected : [];
         const ids = Object.keys(allCities);
         if (!ids.length) {
-            container.innerHTML = `<div class="city-empty">Open the matching scheduling page once to load locations.</div>`;
+            container.innerHTML = `
+                <div class="city-empty">
+                    <span class="city-empty-text">Locations load from the portal once the scanner is running on the ${kind === "ofc" ? "OFC" : "Consular"} page.</span>
+                    <button type="button" class="city-load-btn" data-schedule-url="${SCHEDULE_URL[kind]}">
+                        Open ${kind === "ofc" ? "OFC" : "Consular"} page
+                    </button>
+                </div>`;
             return;
         }
         container.innerHTML = "";
@@ -52,12 +66,25 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     async function loadCityLists() {
         const s = await chrome.storage.local.get(["fp_consularCities", "fp_consularSelectedCities", "fp_ofcCities", "fp_ofcSelectedCities"]);
-        renderCityList("fpOfcCityList", s.fp_ofcCities, s.fp_ofcSelectedCities);
-        renderCityList("fpConsularCityList", s.fp_consularCities, s.fp_consularSelectedCities);
+        renderCityList("fpOfcCityList", s.fp_ofcCities, s.fp_ofcSelectedCities, "ofc");
+        renderCityList("fpConsularCityList", s.fp_consularCities, s.fp_consularSelectedCities, "consular");
         await updateLocationsSummary();
     }
 
     await loadCityLists();
+
+    // "Open page" buttons inside the empty-state
+    ["fpOfcCityList", "fpConsularCityList"].forEach(id => {
+        $(id).addEventListener("click", async e => {
+            const btn = e.target.closest(".city-load-btn");
+            if (!btn) return;
+            const url = btn.dataset.scheduleUrl;
+            const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+            if (tab) await chrome.tabs.update(tab.id, { url });
+            else await chrome.tabs.create({ url });
+            window.close();
+        });
+    });
 
     $("fpConsularCityList").addEventListener("change", async e => {
         if (e.target?.matches('input[type="checkbox"]')) {
